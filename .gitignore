@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+*.spec
+
+# Environment
+.env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+nul
+
+# Dataset (large files)
+PCB-Dataset/
+
+# Model checkpoints
+checkpoints/
+*.pth
+*.pt
+*.onnx
+*.h5
+*.pkl
+
+# Results
+results/
+
+# Test output images
+cv-test/
