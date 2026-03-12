@@ -33,6 +33,9 @@ class VariationModel:
         self._upper: Optional[np.ndarray] = None  # float64
         self._lower: Optional[np.ndarray] = None  # float64
 
+        # 標準差快取
+        self._cached_std: Optional[np.ndarray] = None
+
         # 參考影像（用於對齊）
         self.reference_image: Optional[np.ndarray] = None
 
@@ -60,10 +63,12 @@ class VariationModel:
 
     @property
     def std_image(self) -> Optional[np.ndarray]:
-        """回傳標準差影像（float64）。"""
+        """回傳標準差影像（float64），結果會被快取。"""
         if self._count < 2 or self._m2 is None:
             return None
-        return np.sqrt(self._m2 / self._count)
+        if self._cached_std is None:
+            self._cached_std = np.sqrt(self._m2 / self._count)
+        return self._cached_std
 
     # ------------------------------------------------------------------ #
     #  訓練                                                               #
@@ -85,6 +90,7 @@ class VariationModel:
         self._mean += delta / self._count
         delta2 = img - self._mean
         self._m2 += delta * delta2
+        self._cached_std = None  # 統計量已更新，清除快取
 
         if self._count % 10 == 0:
             logger.info("已訓練 %d 張影像", self._count)
@@ -216,7 +222,7 @@ class VariationModel:
             else:
                 raise FileNotFoundError(f"模型檔案不存在: {path}")
 
-        data = np.load(str(path), allow_pickle=True)
+        data = np.load(str(path), allow_pickle=False)
 
         model = cls()
         model._mean = data["mean"]

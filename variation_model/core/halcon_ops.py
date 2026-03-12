@@ -30,13 +30,9 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import os as _os
-import sys as _sys
-
 import cv2
 import numpy as np
 
-_sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..'))
 from shared.op_logger import log_operation
 from shared.validation import validate_image, validate_positive
 

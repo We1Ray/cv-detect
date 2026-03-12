@@ -67,7 +67,16 @@ class InferencePipeline:
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
 
-        dev = device or "cpu"
+        if device is None:
+            # 自動偵測最佳裝置
+            if torch.cuda.is_available():
+                dev = "cuda"
+            elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                dev = "mps"
+            else:
+                dev = "cpu"
+        else:
+            dev = device
         self.model, self.config, state = TrainingPipeline.load_checkpoint(checkpoint_path, dev)
         self.device = torch.device(dev)
         self.model.to(self.device)

@@ -88,7 +88,7 @@ class AnomalyScorer:
         diff = (original.astype(np.float32) - reconstruction.astype(np.float32)) ** 2
         if diff.ndim == 3:
             diff = diff.mean(axis=2)
-        max_val = 255.0 ** 2 if original.max() > 1.0 else 1.0
+        max_val = 255.0 ** 2 if original.dtype == np.uint8 else 1.0
         return (diff / max_val).astype(np.float32)
 
     def compute_ssim_map(self, original: np.ndarray, reconstruction: np.ndarray) -> np.ndarray:

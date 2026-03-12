@@ -35,6 +35,34 @@ def setup_logging() -> None:
     )
 
 
+def _show_splash() -> "tk.Tk":
+    """顯示啟動畫面，讓使用者知道程式正在載入。"""
+    import tkinter as tk
+
+    splash = tk.Tk()
+    splash.title("Variation Model Inspector")
+    splash.overrideredirect(True)
+
+    w, h = 420, 160
+    splash.update_idletasks()
+    x = (splash.winfo_screenwidth() - w) // 2
+    y = (splash.winfo_screenheight() - h) // 2
+    splash.geometry(f"{w}x{h}+{x}+{y}")
+
+    splash.configure(bg="#2b2b2b")
+    tk.Label(
+        splash, text="Variation Model Inspector",
+        font=("Helvetica", 18, "bold"), fg="#e0e0e0", bg="#2b2b2b",
+    ).pack(pady=(30, 10))
+    tk.Label(
+        splash, text="正在載入模組，請稍候…",
+        font=("Helvetica", 12), fg="#999999", bg="#2b2b2b",
+    ).pack()
+
+    splash.update()
+    return splash
+
+
 def main() -> None:
     """應用程式主進入點。"""
     # 1. 設定 sys.path
@@ -46,7 +74,10 @@ def main() -> None:
     logger = logging.getLogger(__name__)
     logger.info("Variation Model Inspector (HALCON Style) starting...")
 
-    # 3. 載入組態
+    # 3. 顯示啟動畫面（純 tkinter，無重量級 import）
+    splash = _show_splash()
+
+    # 4. 載入組態
     from config import Config
 
     try:
@@ -56,12 +87,15 @@ def main() -> None:
         logger.warning("Failed to load .env, using defaults: %s", exc)
         config = Config()
 
-    # 4. 確保輸出目錄存在
+    # 5. 確保輸出目錄存在
     Path(config.model_save_dir).mkdir(parents=True, exist_ok=True)
     Path(config.results_dir).mkdir(parents=True, exist_ok=True)
 
-    # 5. 啟動 HALCON 風格 GUI
+    # 6. 載入主應用程式（觸發 cv2 / numpy 等重量級 import）
     from gui.halcon_app import HalconApp
+
+    # 7. 關閉啟動畫面，啟動主視窗
+    splash.destroy()
 
     app = HalconApp(config)
     logger.info("HALCON-style GUI initialized, entering main loop")

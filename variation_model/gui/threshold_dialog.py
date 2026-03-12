@@ -99,7 +99,7 @@ class ThresholdDialog(tk.Toplevel):
         """Build all UI components top to bottom."""
         # -- 1. Histogram canvas --
         hist_label = tk.Label(
-            self, text="Histogram", bg=_BG, fg=_FG,
+            self, text="直方圖", bg=_BG, fg=_FG,
             font=("", 9, "bold"), anchor=tk.W,
         )
         hist_label.pack(fill=tk.X, padx=10, pady=(8, 0))
@@ -115,7 +115,7 @@ class ThresholdDialog(tk.Toplevel):
         auto_frame.pack(fill=tk.X, padx=10, pady=(0, 4))
 
         tk.Label(
-            auto_frame, text="Auto:", bg=_BG, fg=_FG, font=("", 9),
+            auto_frame, text="自動：", bg=_BG, fg=_FG, font=("", 9),
         ).pack(side=tk.LEFT, padx=(0, 6))
 
         otsu_btn = tk.Button(
@@ -225,7 +225,7 @@ class ThresholdDialog(tk.Toplevel):
 
         # -- 5. Preview canvas --
         preview_label = tk.Label(
-            self, text="Preview", bg=_BG, fg=_FG,
+            self, text="預覽", bg=_BG, fg=_FG,
             font=("", 9, "bold"), anchor=tk.W,
         )
         preview_label.pack(fill=tk.X, padx=10, pady=(4, 0))

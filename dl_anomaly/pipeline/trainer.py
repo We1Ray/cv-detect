@@ -11,8 +11,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import numpy as np
 import torch
+from PIL import Image
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import AdamW
@@ -189,12 +189,64 @@ class TrainingPipeline:
     # Threshold from training data
     # ------------------------------------------------------------------
 
+    def _denormalize_batch(self, batch: torch.Tensor) -> torch.Tensor:
+        """Undo ImageNet normalisation on GPU: (B, C, H, W) normalised -> [0, 1].
+
+        Equivalent to ``preprocessor.inverse_normalize`` but stays on the
+        source device and operates on the full batch at once.
+        """
+        inv_std = self.preprocessor._inv_std.to(batch.device, batch.dtype)
+        inv_mean = self.preprocessor._inv_mean.to(batch.device, batch.dtype)
+        return (batch * inv_std + inv_mean).clamp(0.0, 1.0)
+
+    def _batch_ssim_scores(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Compute per-image mean(1 - SSIM) entirely on GPU.
+
+        Parameters
+        ----------
+        x, y : (B, C, H, W) tensors in [0, 1] range (denormalised).
+
+        Returns
+        -------
+        (B,) tensor of per-image anomaly scores (mean of 1 - SSIM), matching
+        the semantics of ``AnomalyScorer.compute_ssim_map`` averaged over
+        pixels.
+        """
+        C = x.size(1)
+        min_dim = min(x.shape[2], x.shape[3])
+        win_size = min(7, min_dim)
+        if win_size % 2 == 0:
+            win_size -= 1
+        win_size = max(win_size, 3)
+
+        kernel = self.scorer._get_ssim_kernel(win_size, C)
+        pad = win_size // 2
+
+        mu_x = F.conv2d(x, kernel, padding=pad, groups=C)
+        mu_y = F.conv2d(y, kernel, padding=pad, groups=C)
+
+        sigma_x_sq = F.conv2d(x * x, kernel, padding=pad, groups=C) - mu_x ** 2
+        sigma_y_sq = F.conv2d(y * y, kernel, padding=pad, groups=C) - mu_y ** 2
+        sigma_xy = F.conv2d(x * y, kernel, padding=pad, groups=C) - mu_x * mu_y
+
+        C1 = 0.01 ** 2
+        C2 = 0.03 ** 2
+
+        ssim_map = ((2 * mu_x * mu_y + C1) * (2 * sigma_xy + C2)) / (
+            (mu_x ** 2 + mu_y ** 2 + C1) * (sigma_x_sq + sigma_y_sq + C2)
+        )
+
+        # Average across channels then compute per-image mean of (1 - SSIM)
+        ssim_map = ssim_map.mean(dim=1, keepdim=True)  # (B, 1, H, W)
+        anomaly_map = (1.0 - ssim_map).clamp(0.0, 1.0)
+        return anomaly_map.mean(dim=(1, 2, 3))  # (B,)
+
     @torch.no_grad()
     def compute_training_threshold(self) -> float:
         """Compute anomaly threshold from reconstruction errors of the training set.
 
-        Uses batch GPU MSE for speed when SSIM weight < 1.0, falling back to
-        per-image SSIM only when needed.
+        All computation stays on GPU; only the final per-image scalar scores
+        are moved to CPU.
         """
         assert self.model is not None and self.train_loader is not None
         self.model.eval()
@@ -210,17 +262,16 @@ class TrainingPipeline:
             mse_per_image = ((images - recon) ** 2).mean(dim=(1, 2, 3))
 
             if ssim_w <= 0.0:
-                # Pure MSE — no per-sample numpy conversion needed
+                # Pure MSE -- no SSIM needed
                 scores.extend(mse_per_image.cpu().tolist())
             else:
-                # Need per-sample SSIM (GPU-accelerated via scorer)
-                for i in range(images.size(0)):
-                    orig_np = self.preprocessor.inverse_normalize(images[i])
-                    recon_np = self.preprocessor.inverse_normalize(recon[i])
-                    ssim_map = self.scorer.compute_ssim_map(orig_np, recon_np)
-                    mse_val = float(mse_per_image[i].item())
-                    ssim_val = float(np.mean(ssim_map))
-                    scores.append((1.0 - ssim_w) * mse_val + ssim_w * ssim_val)
+                # Denormalize to [0, 1] on GPU then compute batched SSIM
+                orig_01 = self._denormalize_batch(images)
+                recon_01 = self._denormalize_batch(recon)
+                ssim_per_image = self._batch_ssim_scores(orig_01, recon_01)
+
+                combined = (1.0 - ssim_w) * mse_per_image + ssim_w * ssim_per_image
+                scores.extend(combined.cpu().tolist())
 
         threshold = self.scorer.fit_threshold(scores, self.config.anomaly_threshold_percentile)
         return threshold
@@ -266,6 +317,15 @@ class TrainingPipeline:
         # underlying dataset's transform for validation items.  Since
         # random_split just stores indices, we create a thin wrapper.
         class _TransformOverride(torch.utils.data.Dataset):
+            """Apply a different transform to a ``Subset`` without mutating shared state.
+
+            The previous implementation temporarily swapped ``dataset.transform``
+            on the underlying ``DefectFreeDataset``, which caused a race condition
+            when ``num_workers > 0`` (multiple workers could overwrite each
+            other's swap).  This version loads the image independently so no
+            shared mutable state is touched.
+            """
+
             def __init__(self, subset, transform):
                 self.subset = subset
                 self.transform = transform
@@ -274,25 +334,34 @@ class TrainingPipeline:
                 return len(self.subset)
 
             def __getitem__(self, idx):
-                # Temporarily swap transform
-                orig_transform = self.subset.dataset.transform
-                self.subset.dataset.transform = self.transform
-                item = self.subset[idx]
-                self.subset.dataset.transform = orig_transform
-                return item
+                # Resolve the real index into the underlying DefectFreeDataset.
+                real_idx = self.subset.indices[idx]
+                dataset = self.subset.dataset
+
+                # Load the image directly (mirrors DefectFreeDataset.__getitem__
+                # but uses our own transform, avoiding mutation of shared state).
+                path = dataset.image_paths[real_idx]
+                img = Image.open(path).convert("L" if dataset.grayscale else "RGB")
+
+                if self.transform is not None:
+                    img = self.transform(img)
+
+                return img, str(path)
 
         val_wrapped = _TransformOverride(val_ds, val_transform)
 
-        # Use workers for data loading when CUDA is available (significant
-        # speed-up by overlapping CPU I/O with GPU compute).  On Windows the
-        # workers must be spawned inside ``if __name__ == "__main__":`` guards
-        # which the app already provides via main.py / START.bat.
+        # Use workers for data loading when GPU is available (significant
+        # speed-up by overlapping CPU I/O with GPU compute).
+        # - CUDA on Linux/Windows: num_workers=2, pin_memory=True
+        # - MPS (Apple Silicon): num_workers=0, pin_memory=False (MPS 不支援 pin_memory)
+        # - CPU: num_workers=0
         import sys
-        num_workers = 2 if cfg.device == "cuda" and sys.platform != "darwin" else 0
+        is_cuda = cfg.device == "cuda"
+        num_workers = 2 if is_cuda and sys.platform != "darwin" else 0
         loader_kwargs = dict(
             batch_size=cfg.batch_size,
             num_workers=num_workers,
-            pin_memory=(cfg.device == "cuda"),
+            pin_memory=is_cuda,  # MPS 不支援 pin_memory
             persistent_workers=(num_workers > 0),
         )
         self.train_loader = DataLoader(train_ds, shuffle=True, **loader_kwargs)
@@ -368,7 +437,7 @@ class TrainingPipeline:
         # 4. Load best & compute threshold ----------------------------
         best_ckpt = cfg.checkpoint_dir / "best_model.pt"
         if best_ckpt.exists():
-            state = torch.load(best_ckpt, map_location=self.device, weights_only=False)
+            state = torch.load(best_ckpt, map_location=self.device, weights_only=True)
             self.model.load_state_dict(state["model_state_dict"])
             logger.info("Loaded best checkpoint from epoch %d", state["epoch"])
 
@@ -378,7 +447,7 @@ class TrainingPipeline:
         final_path = cfg.checkpoint_dir / "final_model.pt"
         self.save_checkpoint(final_path, epoch=state.get("epoch", 0) if best_ckpt.exists() else 0, loss=best_val_loss)
         # Append threshold + scorer to final checkpoint
-        final_state = torch.load(final_path, map_location="cpu", weights_only=False)
+        final_state = torch.load(final_path, map_location="cpu", weights_only=True)
         final_state["threshold"] = threshold
         torch.save(final_state, final_path)
         logger.info("Final model saved to %s (threshold=%.6f)", final_path, threshold)
@@ -417,7 +486,7 @@ class TrainingPipeline:
 
         Returns ``(model, config, full_state_dict)``.
         """
-        state = torch.load(path, map_location=device, weights_only=False)
+        state = torch.load(path, map_location=device, weights_only=True)
         cfg = Config.from_dict(state["config"])
 
         model = AnomalyAutoencoder(

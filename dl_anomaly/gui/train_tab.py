@@ -54,31 +54,31 @@ class TrainTab(ttk.Frame):
 
     def _build_ui(self) -> None:
         # --- Top: directory selection ---------------------------------
-        dir_frame = ttk.LabelFrame(self, text="Training Data", padding=6)
+        dir_frame = ttk.LabelFrame(self, text="訓練資料", padding=6)
         dir_frame.pack(fill=tk.X, padx=6, pady=(6, 3))
 
         self._dir_var = tk.StringVar(value=str(self.config.train_image_dir))
-        ttk.Label(dir_frame, text="Directory:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(dir_frame, text="目錄：").grid(row=0, column=0, sticky=tk.W)
         ttk.Entry(dir_frame, textvariable=self._dir_var, width=60).grid(row=0, column=1, padx=4)
-        ttk.Button(dir_frame, text="Browse...", command=self._browse_dir).grid(row=0, column=2)
-        self._count_label = ttk.Label(dir_frame, text="Images: --")
+        ttk.Button(dir_frame, text="瀏覽...", command=self._browse_dir).grid(row=0, column=2)
+        self._count_label = ttk.Label(dir_frame, text="影像數量：--")
         self._count_label.grid(row=0, column=3, padx=8)
 
         # --- Controls -------------------------------------------------
         ctrl_frame = ttk.Frame(self, padding=6)
         ctrl_frame.pack(fill=tk.X, padx=6)
 
-        self._start_btn = ttk.Button(ctrl_frame, text="Start Training", command=self._start_training)
+        self._start_btn = ttk.Button(ctrl_frame, text="開始訓練", command=self._start_training)
         self._start_btn.pack(side=tk.LEFT, padx=2)
-        self._stop_btn = ttk.Button(ctrl_frame, text="Stop", command=self._stop_training, state=tk.DISABLED)
+        self._stop_btn = ttk.Button(ctrl_frame, text="停止", command=self._stop_training, state=tk.DISABLED)
         self._stop_btn.pack(side=tk.LEFT, padx=2)
-        self._save_btn = ttk.Button(ctrl_frame, text="Save Checkpoint", command=self._save_checkpoint, state=tk.DISABLED)
+        self._save_btn = ttk.Button(ctrl_frame, text="儲存模型", command=self._save_checkpoint, state=tk.DISABLED)
         self._save_btn.pack(side=tk.LEFT, padx=2)
-        self._load_btn = ttk.Button(ctrl_frame, text="Load Checkpoint", command=self._load_checkpoint)
+        self._load_btn = ttk.Button(ctrl_frame, text="載入模型", command=self._load_checkpoint)
         self._load_btn.pack(side=tk.LEFT, padx=2)
 
         # Progress
-        self._epoch_var = tk.StringVar(value="Epoch: 0 / 0")
+        self._epoch_var = tk.StringVar(value="訓練輪次：0 / 0")
         ttk.Label(ctrl_frame, textvariable=self._epoch_var).pack(side=tk.LEFT, padx=12)
         self._progress = ttk.Progressbar(ctrl_frame, length=200, mode="determinate")
         self._progress.pack(side=tk.LEFT, padx=4)
@@ -88,13 +88,13 @@ class TrainTab(ttk.Frame):
         mid_frame.pack(fill=tk.BOTH, expand=True, padx=6, pady=3)
 
         # Left: matplotlib loss curve
-        plot_frame = ttk.LabelFrame(mid_frame, text="Loss Curve", padding=4)
+        plot_frame = ttk.LabelFrame(mid_frame, text="損失曲線", padding=4)
         plot_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self._loss_fig = Figure(figsize=(5, 3), dpi=90)
         self._loss_ax = self._loss_fig.add_subplot(111)
-        self._loss_ax.set_xlabel("Epoch")
-        self._loss_ax.set_ylabel("Loss")
+        self._loss_ax.set_xlabel("訓練輪次")
+        self._loss_ax.set_ylabel("損失值")
         self._loss_ax.grid(True, alpha=0.3)
         self._loss_fig.tight_layout()
 
@@ -102,7 +102,7 @@ class TrainTab(ttk.Frame):
         self._loss_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         # Right: sample reconstructions (just a canvas placeholder)
-        sample_frame = ttk.LabelFrame(mid_frame, text="Reconstruction Samples", padding=4)
+        sample_frame = ttk.LabelFrame(mid_frame, text="重建樣本預覽", padding=4)
         sample_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(4, 0))
 
         self._sample_fig = Figure(figsize=(4, 3), dpi=90)
@@ -110,7 +110,7 @@ class TrainTab(ttk.Frame):
         self._sample_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         # --- Bottom: log area -----------------------------------------
-        log_frame = ttk.LabelFrame(self, text="Training Log", padding=4)
+        log_frame = ttk.LabelFrame(self, text="訓練日誌", padding=4)
         log_frame.pack(fill=tk.X, padx=6, pady=(3, 6))
 
         self._log_text = tk.Text(log_frame, height=8, state=tk.DISABLED, wrap=tk.WORD, font=("Consolas", 9))
@@ -124,7 +124,7 @@ class TrainTab(ttk.Frame):
     # ==================================================================
 
     def _browse_dir(self) -> None:
-        d = filedialog.askdirectory(title="Select Training Image Directory")
+        d = filedialog.askdirectory(title="選擇訓練影像目錄")
         if d:
             self._dir_var.set(d)
             self._update_image_count(Path(d))
@@ -132,7 +132,7 @@ class TrainTab(ttk.Frame):
     def _update_image_count(self, directory: Path) -> None:
         exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
         count = sum(1 for p in directory.rglob("*") if p.is_file() and p.suffix.lower() in exts)
-        self._count_label.configure(text=f"Images: {count}")
+        self._count_label.configure(text=f"影像數量：{count}")
 
     # ==================================================================
     # Training lifecycle
@@ -141,7 +141,7 @@ class TrainTab(ttk.Frame):
     def _start_training(self) -> None:
         train_dir = Path(self._dir_var.get())
         if not train_dir.exists():
-            messagebox.showerror("Error", f"Directory not found:\n{train_dir}")
+            messagebox.showerror("錯誤", f"找不到目錄：\n{train_dir}")
             return
 
         self.config.train_image_dir = train_dir
@@ -153,7 +153,7 @@ class TrainTab(ttk.Frame):
         self._stop_btn.configure(state=tk.NORMAL)
         self._save_btn.configure(state=tk.DISABLED)
 
-        self._log("Training started...")
+        self._log("訓練已開始...")
 
         self._train_thread = threading.Thread(target=self._train_worker, daemon=True)
         self._train_thread.start()
@@ -161,7 +161,7 @@ class TrainTab(ttk.Frame):
     def _stop_training(self) -> None:
         if self._pipeline is not None:
             self._pipeline.request_stop()
-            self._log("Stop requested -- finishing current epoch...")
+            self._log("已請求停止 — 正在完成當前輪次...")
             self._stop_btn.configure(state=tk.DISABLED)
 
     def _train_worker(self) -> None:
@@ -200,7 +200,7 @@ class TrainTab(ttk.Frame):
         tl = info["train_loss"]
         vl = info["val_loss"]
 
-        self._epoch_var.set(f"Epoch: {epoch} / {total}")
+        self._epoch_var.set(f"訓練輪次：{epoch} / {total}")
         self._progress["maximum"] = total
         self._progress["value"] = epoch
 
@@ -226,8 +226,8 @@ class TrainTab(ttk.Frame):
     def _handle_error(self, msg: str) -> None:
         self._start_btn.configure(state=tk.NORMAL)
         self._stop_btn.configure(state=tk.DISABLED)
-        self._log(f"ERROR: {msg}")
-        messagebox.showerror("Training Error", msg)
+        self._log(f"錯誤：{msg}")
+        messagebox.showerror("訓練錯誤", msg)
 
     # ==================================================================
     # Plot update
@@ -237,10 +237,10 @@ class TrainTab(ttk.Frame):
         ax = self._loss_ax
         ax.clear()
         epochs = list(range(1, len(self._train_losses) + 1))
-        ax.plot(epochs, self._train_losses, label="Train", linewidth=1.2)
-        ax.plot(epochs, self._val_losses, label="Val", linewidth=1.2)
-        ax.set_xlabel("Epoch")
-        ax.set_ylabel("Loss")
+        ax.plot(epochs, self._train_losses, label="訓練", linewidth=1.2)
+        ax.plot(epochs, self._val_losses, label="驗證", linewidth=1.2)
+        ax.set_xlabel("訓練輪次")
+        ax.set_ylabel("損失值")
         ax.legend(fontsize=8)
         ax.grid(True, alpha=0.3)
         self._loss_fig.tight_layout()
@@ -252,7 +252,7 @@ class TrainTab(ttk.Frame):
 
     def _save_checkpoint(self) -> None:
         if self._pipeline is None or self._pipeline.model is None:
-            messagebox.showwarning("Warning", "No model to save.")
+            messagebox.showwarning("警告", "沒有可儲存的模型。")
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".pt",
@@ -261,11 +261,11 @@ class TrainTab(ttk.Frame):
         )
         if path:
             self._pipeline.save_checkpoint(Path(path), epoch=len(self._train_losses), loss=self._val_losses[-1] if self._val_losses else 0.0)
-            self._log(f"Checkpoint saved: {path}")
+            self._log(f"模型已儲存：{path}")
 
     def _load_checkpoint(self) -> None:
         path = filedialog.askopenfilename(
-            filetypes=[("PyTorch checkpoint", "*.pt")],
+            filetypes=[("PyTorch 模型檔", "*.pt")],
             initialdir=str(self.config.checkpoint_dir),
         )
         if not path:
@@ -274,10 +274,10 @@ class TrainTab(ttk.Frame):
             model, cfg, state = TrainingPipeline.load_checkpoint(Path(path), self.config.device)
             self._pipeline = TrainingPipeline(cfg)
             self._pipeline.model = model
-            self._log(f"Checkpoint loaded: {path}  (epoch {state.get('epoch', '?')})")
+            self._log(f"模型已載入：{path}（輪次 {state.get('epoch', '?')}）")
             self._save_btn.configure(state=tk.NORMAL)
         except Exception as exc:
-            messagebox.showerror("Load Error", str(exc))
+            messagebox.showerror("載入錯誤", str(exc))
 
     # ==================================================================
     # Log helper

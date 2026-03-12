@@ -30,19 +30,15 @@ from shared.history_panel import HistoryPanel
 from shared.progress_manager import ProgressManager
 
 from config import Config
-from core.variation_model import VariationModel
-from gui.dialogs import (
-    BatchInspectDialog,
-    HistogramDialog,
-    ModelInfoDialog,
-    SettingsDialog,
-    TrainingDialog,
-)
 from gui.image_viewer import ImageViewer
 from gui.operations_panel import OperationsPanel
 from gui.pipeline_panel import PipelinePanel
 from gui.properties_panel import PropertiesPanel
 from gui.toolbar import Toolbar
+
+# 延遲載入的模組（用到時才 import，加速啟動）
+# - core.variation_model.VariationModel
+# - gui.dialogs: BatchInspectDialog, HistogramDialog, ModelInfoDialog, SettingsDialog, TrainingDialog
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +53,7 @@ class HalconApp(tk.Tk):
         super().__init__()
 
         self.config = config
-        self.model: Optional[VariationModel] = None
+        self.model = None  # Optional[VariationModel], lazy-imported
 
         # 目前載入的影像資訊
         self._current_image_path: Optional[Path] = None
@@ -435,6 +431,23 @@ class HalconApp(tk.Tk):
         view_menu.add_separator()
         view_menu.add_command(label="顯示直方圖...", command=self._show_histogram)
         menubar.add_cascade(label="檢視", menu=view_menu)
+
+        # ── 工具 ──
+        tools_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+                             activebackground="#0078d4", activeforeground="#ffffff")
+        tools_menu.add_command(label="形狀匹配...", command=self._open_shape_matching)
+        tools_menu.add_command(label="量測工具...", command=self._open_metrology)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="ROI 管理...", command=self._open_roi_manager)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="PatchCore / ONNX 模型...", command=self._open_advanced_models)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="檢測工具 (FFT/色彩/OCR/條碼)...", command=self._open_inspection_tools)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="工程工具 (標定/管線/SPC/拼接)...", command=self._open_engineering_tools)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="MVP 工具 (相機/流程/報表)...", command=self._open_mvp_tools)
+        menubar.add_cascade(label="工具", menu=tools_menu)
 
         # ── 說明 ──
         help_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
@@ -958,6 +971,7 @@ class HalconApp(tk.Tk):
             if imgs["std"] is not None:
                 self.pipeline_panel.add_step("模型標準差", imgs["std"], "model")
 
+        from gui.dialogs import TrainingDialog
         TrainingDialog(self, self.config, on_complete=on_complete)
 
     def _load_model(self) -> None:
@@ -971,6 +985,7 @@ class HalconApp(tk.Tk):
             return
 
         try:
+            from core.variation_model import VariationModel
             model = VariationModel.load(path)
             self.model = model
             self._status_var.set(f"模型已載入: {Path(path).name} ({model.count} 張影像)")
@@ -1014,6 +1029,7 @@ class HalconApp(tk.Tk):
         if self.model is None:
             messagebox.showwarning("警告", "尚未載入模型。")
             return
+        from gui.dialogs import ModelInfoDialog
         ModelInfoDialog(self, self.model)
 
     def _reprepare_thresholds(self) -> None:
@@ -1187,6 +1203,7 @@ class HalconApp(tk.Tk):
             gaussian_blur_kernel=params["blur_kernel"],
         )
 
+        from gui.dialogs import BatchInspectDialog
         BatchInspectDialog(
             self, self.model, updated_config,
             on_view_result=on_view_result,
@@ -1221,6 +1238,7 @@ class HalconApp(tk.Tk):
         if step is None:
             messagebox.showwarning("警告", "沒有可顯示的影像。")
             return
+        from gui.dialogs import HistogramDialog
         HistogramDialog(self, step.image, f"直方圖 - {step.name}")
 
     # ================================================================== #
@@ -1311,6 +1329,7 @@ class HalconApp(tk.Tk):
             })
             self._status_var.set("設定已更新")
 
+        from gui.dialogs import SettingsDialog
         SettingsDialog(self, self.config, on_apply=on_settings_applied)
 
     # ================================================================== #
@@ -2005,6 +2024,86 @@ class HalconApp(tk.Tk):
     # ================================================================== #
     #  關閉                                                                #
     # ================================================================== #
+
+    # ================================================================== #
+    #  Phase 1 Tools: Shape Matching, Metrology, ROI Manager              #
+    # ================================================================== #
+
+    def _vm_add_pipeline_step(self, name: str, array, op_meta=None) -> None:
+        """Adapter for dialog callbacks - wraps pipeline_panel.add_step."""
+        self.pipeline_panel.add_step(name, array, "process")
+
+    def _open_shape_matching(self) -> None:
+        from gui.shape_matching_dialog import ShapeMatchingDialog
+        ShapeMatchingDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    def _open_metrology(self) -> None:
+        from gui.metrology_dialog import MetrologyDialog
+        MetrologyDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    def _open_roi_manager(self) -> None:
+        from gui.roi_dialog import ROIManagerDialog
+        ROIManagerDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+            viewer=self.image_viewer,
+        )
+
+    def _open_advanced_models(self) -> None:
+        from gui.advanced_models_dialog import AdvancedModelsDialog
+        from dl_anomaly.config import Config as DLConfig
+        dl_config = DLConfig()
+        AdvancedModelsDialog(
+            self,
+            config=dl_config,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    def _open_inspection_tools(self) -> None:
+        from gui.inspection_tools_dialog import InspectionToolsDialog
+        InspectionToolsDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    def _open_engineering_tools(self) -> None:
+        from gui.engineering_tools_dialog import EngineeringToolsDialog
+        EngineeringToolsDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    def _open_mvp_tools(self) -> None:
+        try:
+            from gui.mvp_tools_dialog import MVPToolsDialog
+        except ImportError as exc:
+            from tkinter import messagebox
+            messagebox.showerror("匯入錯誤", f"無法載入 MVP 工具模組：\n{exc}")
+            return
+        MVPToolsDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._vm_add_pipeline_step,
+            set_status=self.set_status,
+        )
 
     def _on_close(self) -> None:
         """關閉應用程式。"""

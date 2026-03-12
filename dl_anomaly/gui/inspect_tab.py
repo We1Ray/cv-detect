@@ -55,25 +55,25 @@ class InspectTab(ttk.Frame):
         top = ttk.Frame(self, padding=4)
         top.pack(fill=tk.X, padx=6, pady=(6, 2))
 
-        ttk.Label(top, text="Checkpoint:").pack(side=tk.LEFT)
+        ttk.Label(top, text="模型檔案：").pack(side=tk.LEFT)
         self._ckpt_var = tk.StringVar()
         ttk.Entry(top, textvariable=self._ckpt_var, width=50).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Load", command=self._load_checkpoint).pack(side=tk.LEFT, padx=2)
+        ttk.Button(top, text="載入", command=self._load_checkpoint).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(top, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=8)
 
         self._mode_var = tk.StringVar(value="single")
-        ttk.Radiobutton(top, text="Single", variable=self._mode_var, value="single").pack(side=tk.LEFT)
-        ttk.Radiobutton(top, text="Batch", variable=self._mode_var, value="batch").pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Inspect", command=self._run_inspection).pack(side=tk.LEFT, padx=6)
+        ttk.Radiobutton(top, text="單張", variable=self._mode_var, value="single").pack(side=tk.LEFT)
+        ttk.Radiobutton(top, text="批次", variable=self._mode_var, value="batch").pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text="開始檢測", command=self._run_inspection).pack(side=tk.LEFT, padx=6)
 
         # --- Middle: 2x2 viewer --------------------------------------
         viewer_frame = ttk.Frame(self)
         viewer_frame.pack(fill=tk.BOTH, expand=True, padx=6, pady=2)
 
         self._viewers: dict[str, ImageViewer] = {}
-        labels = [("Original", 0, 0), ("Reconstruction", 0, 1),
-                  ("Error Heatmap", 1, 0), ("Defect Mask", 1, 1)]
+        labels = [("原始影像", 0, 0), ("重建影像", 0, 1),
+                  ("誤差熱力圖", 1, 0), ("瑕疵遮罩", 1, 1)]
         for label, r, c in labels:
             frame = ttk.LabelFrame(viewer_frame, text=label, padding=2)
             frame.grid(row=r, column=c, sticky="nsew", padx=2, pady=2)
@@ -88,36 +88,36 @@ class InspectTab(ttk.Frame):
         bot.pack(fill=tk.X, padx=6, pady=(2, 6))
 
         # Result label
-        self._result_var = tk.StringVar(value="Result: --")
+        self._result_var = tk.StringVar(value="結果：--")
         result_lbl = ttk.Label(bot, textvariable=self._result_var, font=("Segoe UI", 11, "bold"))
         result_lbl.pack(side=tk.LEFT, padx=4)
 
-        self._score_var = tk.StringVar(value="Score: --")
+        self._score_var = tk.StringVar(value="分數：--")
         ttk.Label(bot, textvariable=self._score_var).pack(side=tk.LEFT, padx=8)
 
-        self._regions_var = tk.StringVar(value="Regions: --")
+        self._regions_var = tk.StringVar(value="瑕疵區域：--")
         ttk.Label(bot, textvariable=self._regions_var).pack(side=tk.LEFT, padx=8)
 
         # Navigation
         nav = ttk.Frame(bot)
         nav.pack(side=tk.RIGHT)
-        self._prev_btn = ttk.Button(nav, text="<< Prev", command=self._prev, state=tk.DISABLED)
+        self._prev_btn = ttk.Button(nav, text="<< 上一張", command=self._prev, state=tk.DISABLED)
         self._prev_btn.pack(side=tk.LEFT, padx=2)
         self._idx_var = tk.StringVar(value="0 / 0")
         ttk.Label(nav, textvariable=self._idx_var).pack(side=tk.LEFT, padx=4)
-        self._next_btn = ttk.Button(nav, text="Next >>", command=self._next, state=tk.DISABLED)
+        self._next_btn = ttk.Button(nav, text="下一張 >>", command=self._next, state=tk.DISABLED)
         self._next_btn.pack(side=tk.LEFT, padx=2)
-        ttk.Button(nav, text="Save", command=self._save_current).pack(side=tk.LEFT, padx=6)
+        ttk.Button(nav, text="儲存", command=self._save_current).pack(side=tk.LEFT, padx=6)
 
         # Progress
         self._progress = ttk.Progressbar(bot, length=160, mode="determinate")
         self._progress.pack(side=tk.RIGHT, padx=8)
 
         # --- Defect details table ------------------------------------
-        table_frame = ttk.LabelFrame(self, text="Defect Regions", padding=4)
+        table_frame = ttk.LabelFrame(self, text="瑕疵區域詳情", padding=4)
         table_frame.pack(fill=tk.X, padx=6, pady=(0, 6))
 
-        cols = ("ID", "X", "Y", "W", "H", "Area")
+        cols = ("編號", "X", "Y", "寬", "高", "面積")
         self._tree = ttk.Treeview(table_frame, columns=cols, show="headings", height=4)
         for c in cols:
             self._tree.heading(c, text=c)
@@ -139,7 +139,7 @@ class InspectTab(ttk.Frame):
             self._pipeline = InferencePipeline(path, device=self.config.device)
             self._ckpt_var.set(path)
         except Exception as exc:
-            messagebox.showerror("Load Error", str(exc))
+            messagebox.showerror("載入錯誤", str(exc))
 
     # ==================================================================
     # Inspection dispatch
@@ -147,12 +147,12 @@ class InspectTab(ttk.Frame):
 
     def _run_inspection(self) -> None:
         if self._pipeline is None:
-            messagebox.showwarning("Warning", "Load a checkpoint first.")
+            messagebox.showwarning("警告", "請先載入模型檔案。")
             return
 
         if self._mode_var.get() == "single":
             path = filedialog.askopenfilename(
-                filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff")],
+                filetypes=[("影像檔", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff")],
             )
             if not path:
                 return
@@ -160,7 +160,7 @@ class InspectTab(ttk.Frame):
             t = threading.Thread(target=self._inspect_single_worker, args=(path,), daemon=True)
             t.start()
         else:
-            d = filedialog.askdirectory(title="Select Image Directory")
+            d = filedialog.askdirectory(title="選擇影像目錄")
             if not d:
                 return
             self._result_paths = []  # will be populated
@@ -210,7 +210,7 @@ class InspectTab(ttk.Frame):
                     self._progress["maximum"] = total
                     self._progress["value"] = cur
                 elif tag == "error":
-                    messagebox.showerror("Inspection Error", data[0])
+                    messagebox.showerror("檢測錯誤", data[0])
         except queue.Empty:
             pass
         self.after(self.POLL_INTERVAL_MS, self._poll_queue)
@@ -230,16 +230,16 @@ class InspectTab(ttk.Frame):
         heatmap = create_error_heatmap(r.error_map)
         mask_rgb = np.stack([r.defect_mask] * 3, axis=-1)
 
-        self._viewers["Original"].set_image(orig)
-        self._viewers["Reconstruction"].set_image(recon)
-        self._viewers["Error Heatmap"].set_image(heatmap)
-        self._viewers["Defect Mask"].set_image(mask_rgb)
+        self._viewers["原始影像"].set_image(orig)
+        self._viewers["重建影像"].set_image(recon)
+        self._viewers["誤差熱力圖"].set_image(heatmap)
+        self._viewers["瑕疵遮罩"].set_image(mask_rgb)
 
         # Stats
-        label = "DEFECTIVE" if r.is_defective else "PASS"
-        self._result_var.set(f"Result: {label}")
-        self._score_var.set(f"Score: {r.anomaly_score:.6f}")
-        self._regions_var.set(f"Regions: {len(r.defect_regions)}")
+        label = "瑕疵" if r.is_defective else "良品"
+        self._result_var.set(f"結果：{label}")
+        self._score_var.set(f"分數：{r.anomaly_score:.6f}")
+        self._regions_var.set(f"瑕疵區域：{len(r.defect_regions)}")
 
         # Table
         for item in self._tree.get_children():
@@ -277,6 +277,6 @@ class InspectTab(ttk.Frame):
         orig_path = self._result_paths[self._current_idx] if self._current_idx < len(self._result_paths) else "unknown"
         try:
             out = save_result_image(r, orig_path, self.config.results_dir)
-            messagebox.showinfo("Saved", f"Result saved to:\n{out}")
+            messagebox.showinfo("已儲存", f"結果已儲存至：\n{out}")
         except Exception as exc:
-            messagebox.showerror("Save Error", str(exc))
+            messagebox.showerror("儲存錯誤", str(exc))

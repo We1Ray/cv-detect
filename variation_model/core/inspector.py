@@ -78,7 +78,7 @@ class Inspector:
         Returns:
             InspectionResult 檢測結果。
         """
-        img = image.astype(np.float64)
+        img = image if image.dtype == np.float64 else image.astype(np.float64)
 
         # 計算差異
         difference = img - self._mean
@@ -154,9 +154,9 @@ class Inspector:
 
         # 建立測試影像與模型影像的金字塔
         pyr_img = [image.astype(np.float64)]
-        pyr_mean = [self._mean.copy()]
-        pyr_upper = [self._upper.copy()]
-        pyr_lower = [self._lower.copy()]
+        pyr_mean = [self._mean]
+        pyr_upper = [self._upper]
+        pyr_lower = [self._lower]
 
         for _ in range(levels - 1):
             pyr_img.append(cv2.pyrDown(pyr_img[-1]))

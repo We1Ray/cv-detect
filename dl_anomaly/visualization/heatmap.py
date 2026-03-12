@@ -51,7 +51,10 @@ def create_defect_overlay(
     red = np.zeros_like(original)
     red[:, :, 0] = 255
 
-    overlay[mask] = cv2.addWeighted(original, 1.0 - alpha, red, alpha, 0)[mask]
+    overlay[mask] = (
+        (1.0 - alpha) * original[mask].astype(np.float32)
+        + alpha * red[mask].astype(np.float32)
+    ).astype(np.uint8)
     return overlay
 
 

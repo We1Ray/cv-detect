@@ -19,16 +19,16 @@ from matplotlib.figure import Figure
 def plot_loss_curve(
     train_losses: List[float],
     val_losses: List[float],
-    title: str = "Training & Validation Loss",
+    title: str = "訓練與驗證損失",
 ) -> Figure:
     """Line chart of training and validation loss per epoch."""
     fig, ax = plt.subplots(figsize=(7, 4), dpi=100)
     epochs = list(range(1, len(train_losses) + 1))
 
-    ax.plot(epochs, train_losses, label="Train", linewidth=1.5)
-    ax.plot(epochs, val_losses, label="Validation", linewidth=1.5)
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Loss")
+    ax.plot(epochs, train_losses, label="訓練", linewidth=1.5)
+    ax.plot(epochs, val_losses, label="驗證", linewidth=1.5)
+    ax.set_xlabel("訓練輪次")
+    ax.set_ylabel("損失值")
     ax.set_title(title)
     ax.legend()
     ax.grid(True, alpha=0.3)
@@ -57,8 +57,8 @@ def plot_reconstruction_samples(
 
     for i in range(n):
         for row, imgs, label in [
-            (0, originals, "Original"),
-            (1, reconstructions, "Reconstruction"),
+            (0, originals, "原始"),
+            (1, reconstructions, "重建"),
         ]:
             ax = axes[row, i]
             img = imgs[i]
@@ -68,7 +68,7 @@ def plot_reconstruction_samples(
             if i == 0:
                 ax.set_ylabel(label, fontsize=10)
 
-    fig.suptitle("Reconstruction Samples", fontsize=12)
+    fig.suptitle("重建樣本", fontsize=12)
     fig.tight_layout()
     return fig
 
@@ -76,18 +76,18 @@ def plot_reconstruction_samples(
 def plot_error_distribution(
     errors: List[float],
     threshold: Optional[float] = None,
-    title: str = "Anomaly Score Distribution",
+    title: str = "異常分數分佈",
 ) -> Figure:
     """Histogram of image-level anomaly scores with an optional threshold line."""
     fig, ax = plt.subplots(figsize=(7, 4), dpi=100)
     ax.hist(errors, bins=50, alpha=0.7, color="steelblue", edgecolor="white")
 
     if threshold is not None:
-        ax.axvline(threshold, color="red", linestyle="--", linewidth=2, label=f"Threshold = {threshold:.4f}")
+        ax.axvline(threshold, color="red", linestyle="--", linewidth=2, label=f"閾值 = {threshold:.4f}")
         ax.legend()
 
-    ax.set_xlabel("Anomaly Score")
-    ax.set_ylabel("Count")
+    ax.set_xlabel("異常分數")
+    ax.set_ylabel("數量")
     ax.set_title(title)
     ax.grid(True, alpha=0.3, axis="y")
     fig.tight_layout()

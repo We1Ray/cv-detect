@@ -30,9 +30,31 @@ def _parse_bool(value: str) -> bool:
 
 
 def _select_device(requested: str) -> str:
-    """Return 'cuda' only when both requested AND available; else 'cpu'."""
-    if requested.strip().lower() == "cuda" and torch.cuda.is_available():
+    """自動選擇最佳運算裝置.
+
+    優先順序:
+        1. 使用者指定且可用 → 直接使用
+        2. CUDA (NVIDIA GPU) → "cuda"
+        3. MPS (Apple Silicon GPU) → "mps"
+        4. CPU fallback → "cpu"
+
+    支援的 requested 值: "cuda", "mps", "cpu", "auto"
+    """
+    req = requested.strip().lower()
+
+    # 使用者明確指定
+    if req == "cuda" and torch.cuda.is_available():
         return "cuda"
+    if req == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    if req == "cpu":
+        return "cpu"
+
+    # auto 或指定裝置不可用 → 自動偵測最佳裝置
+    if torch.cuda.is_available():
+        return "cuda"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
     return "cpu"
 
 
@@ -62,7 +84,7 @@ class Config:
     learning_rate: float = field(default_factory=lambda: float(os.getenv("LEARNING_RATE", "0.001")))
     num_epochs: int = field(default_factory=lambda: int(os.getenv("NUM_EPOCHS", "100")))
     early_stopping_patience: int = field(default_factory=lambda: int(os.getenv("EARLY_STOPPING_PATIENCE", "10")))
-    device: str = field(default_factory=lambda: _select_device(os.getenv("DEVICE", "cuda")))
+    device: str = field(default_factory=lambda: _select_device(os.getenv("DEVICE", "auto")))
 
     # --- Anomaly detection ---
     anomaly_threshold_percentile: float = field(

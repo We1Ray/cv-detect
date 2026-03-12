@@ -44,43 +44,45 @@ class SettingsTab(ttk.Frame):
         row = 0
 
         # --- Architecture ---------------------------------------------
-        row = self._section_header(container, "Architecture", row)
-        row = self._add_entry(container, "latent_dim", "Latent Dimension:", row, width=10)
-        row = self._add_entry(container, "base_channels", "Base Channels:", row, width=10)
-        row = self._add_entry(container, "num_encoder_blocks", "Encoder Blocks:", row, width=10)
-        row = self._add_entry(container, "image_size", "Image Size:", row, width=10)
+        row = self._section_header(container, "模型架構", row)
+        row = self._add_entry(container, "latent_dim", "潛在維度：", row, width=10)
+        row = self._add_entry(container, "base_channels", "基礎通道數：", row, width=10)
+        row = self._add_entry(container, "num_encoder_blocks", "編碼器層數：", row, width=10)
+        row = self._add_entry(container, "image_size", "影像尺寸：", row, width=10)
 
         # --- Training -------------------------------------------------
-        row = self._section_header(container, "Training", row)
-        row = self._add_entry(container, "learning_rate", "Learning Rate:", row, width=12)
-        row = self._add_entry(container, "batch_size", "Batch Size:", row, width=10)
-        row = self._add_entry(container, "num_epochs", "Epochs:", row, width=10)
-        row = self._add_entry(container, "early_stopping_patience", "Early Stopping Patience:", row, width=10)
+        row = self._section_header(container, "訓練參數", row)
+        row = self._add_entry(container, "learning_rate", "學習率：", row, width=12)
+        row = self._add_entry(container, "batch_size", "批次大小：", row, width=10)
+        row = self._add_entry(container, "num_epochs", "訓練輪次：", row, width=10)
+        row = self._add_entry(container, "early_stopping_patience", "早停耐心值：", row, width=10)
 
         # --- Device ---------------------------------------------------
-        row = self._section_header(container, "Device", row)
+        row = self._section_header(container, "運算裝置", row)
         self._vars["device"] = tk.StringVar()
-        ttk.Label(container, text="Device:").grid(row=row, column=0, sticky=tk.W, pady=2)
+        ttk.Label(container, text="裝置：").grid(row=row, column=0, sticky=tk.W, pady=2)
         devices = ["cpu"]
         if torch.cuda.is_available():
             devices.append("cuda")
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            devices.append("mps")
         combo = ttk.Combobox(container, textvariable=self._vars["device"], values=devices, state="readonly", width=10)
         combo.grid(row=row, column=1, sticky=tk.W, pady=2)
         row += 1
 
         # --- Grayscale toggle -----------------------------------------
         self._vars["grayscale"] = tk.BooleanVar()
-        ttk.Checkbutton(container, text="Grayscale input", variable=self._vars["grayscale"]).grid(
+        ttk.Checkbutton(container, text="灰階輸入", variable=self._vars["grayscale"]).grid(
             row=row, column=0, columnspan=2, sticky=tk.W, pady=2
         )
         row += 1
 
         # --- Anomaly --------------------------------------------------
-        row = self._section_header(container, "Anomaly Detection", row)
+        row = self._section_header(container, "異常檢測", row)
 
         # Threshold percentile slider
         self._vars["anomaly_threshold_percentile"] = tk.DoubleVar()
-        ttk.Label(container, text="Threshold Percentile:").grid(row=row, column=0, sticky=tk.W, pady=2)
+        ttk.Label(container, text="閾值百分位：").grid(row=row, column=0, sticky=tk.W, pady=2)
         pct_frame = ttk.Frame(container)
         pct_frame.grid(row=row, column=1, sticky=tk.W)
         self._pct_slider = tk.Scale(
@@ -92,7 +94,7 @@ class SettingsTab(ttk.Frame):
 
         # SSIM weight slider
         self._vars["ssim_weight"] = tk.DoubleVar()
-        ttk.Label(container, text="SSIM Weight:").grid(row=row, column=0, sticky=tk.W, pady=2)
+        ttk.Label(container, text="SSIM 權重：").grid(row=row, column=0, sticky=tk.W, pady=2)
         sw_frame = ttk.Frame(container)
         sw_frame.grid(row=row, column=1, sticky=tk.W)
         self._ssim_slider = tk.Scale(
@@ -105,9 +107,9 @@ class SettingsTab(ttk.Frame):
         # --- Buttons --------------------------------------------------
         btn_frame = ttk.Frame(container)
         btn_frame.grid(row=row, column=0, columnspan=2, pady=12)
-        ttk.Button(btn_frame, text="Apply", command=self._apply).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn_frame, text="Reset", command=self._load_from_config).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn_frame, text="Save to .env", command=self._save_env).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_frame, text="套用", command=self._apply).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_frame, text="重設", command=self._load_from_config).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_frame, text="儲存至 .env", command=self._save_env).pack(side=tk.LEFT, padx=4)
 
     # ------------------------------------------------------------------
     # Widget helpers
@@ -163,9 +165,9 @@ class SettingsTab(ttk.Frame):
             self.config.in_channels = 1 if self.config.grayscale else 3
             self.config.anomaly_threshold_percentile = float(self._vars["anomaly_threshold_percentile"].get())
             self.config.ssim_weight = float(self._vars["ssim_weight"].get())
-            messagebox.showinfo("Settings", "Settings applied successfully.")
+            messagebox.showinfo("設定", "設定已成功套用。")
         except (ValueError, TypeError) as exc:
-            messagebox.showerror("Validation Error", str(exc))
+            messagebox.showerror("驗證錯誤", str(exc))
 
     # ==================================================================
     # .env persistence
@@ -207,6 +209,6 @@ class SettingsTab(ttk.Frame):
         ]
         try:
             env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            messagebox.showinfo("Saved", f"Settings written to:\n{env_path}")
+            messagebox.showinfo("已儲存", f"設定已寫入：\n{env_path}")
         except OSError as exc:
-            messagebox.showerror("Save Error", str(exc))
+            messagebox.showerror("儲存錯誤", str(exc))

@@ -34,6 +34,34 @@ def _setup_logging() -> None:
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 
+def _show_splash() -> "tk.Tk":
+    """顯示啟動畫面，讓使用者知道程式正在載入。"""
+    import tkinter as tk
+
+    splash = tk.Tk()
+    splash.title("DL 異常偵測器")
+    splash.overrideredirect(True)
+
+    w, h = 420, 160
+    splash.update_idletasks()
+    x = (splash.winfo_screenwidth() - w) // 2
+    y = (splash.winfo_screenheight() - h) // 2
+    splash.geometry(f"{w}x{h}+{x}+{y}")
+
+    splash.configure(bg="#2b2b2b")
+    tk.Label(
+        splash, text="DL 異常偵測器",
+        font=("Helvetica", 18, "bold"), fg="#e0e0e0", bg="#2b2b2b",
+    ).pack(pady=(30, 10))
+    tk.Label(
+        splash, text="正在載入模組，請稍候…",
+        font=("Helvetica", 12), fg="#999999", bg="#2b2b2b",
+    ).pack()
+
+    splash.update()
+    return splash
+
+
 def main() -> None:
     _setup_path()
     _setup_logging()
@@ -45,6 +73,9 @@ def main() -> None:
     # paths in .env (e.g. .\checkpoints) resolve correctly.
     os.chdir(Path(__file__).resolve().parent)
 
+    # 顯示啟動畫面（純 tkinter，無重量級 import）
+    splash = _show_splash()
+
     from dl_anomaly.config import Config
     from dl_anomaly.gui.halcon_app import HalconApp
 
@@ -53,6 +84,9 @@ def main() -> None:
     logger.info("Image size: %d | Grayscale: %s", config.image_size, config.grayscale)
     logger.info("Architecture: latent=%d, base_ch=%d, blocks=%d",
                 config.latent_dim, config.base_channels, config.num_encoder_blocks)
+
+    # 關閉啟動畫面，啟動主視窗
+    splash.destroy()
 
     app = HalconApp(config)
     app.mainloop()

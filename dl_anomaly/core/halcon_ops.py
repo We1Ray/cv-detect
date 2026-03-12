@@ -33,9 +33,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import cv2
 import numpy as np
 
-import sys as _sys
-import os as _os
-_sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', '..'))
 from shared.validation import validate_image, validate_positive
 from shared.op_logger import log_operation
 

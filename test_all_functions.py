@@ -1174,7 +1174,7 @@ def test_inference():
     ckpt_path = Path(tmp_dir) / "test_model.pt"
     tp.save_checkpoint(ckpt_path, epoch=1, loss=0.5)
     # 加入 threshold
-    state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    state = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     state["threshold"] = 0.05
     torch.save(state, ckpt_path)
 
