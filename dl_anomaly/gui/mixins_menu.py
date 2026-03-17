@@ -5,6 +5,8 @@ from __future__ import annotations
 import tkinter as tk
 from typing import TYPE_CHECKING
 
+from dl_anomaly.gui.platform_keys import accel, accel_shift
+
 if TYPE_CHECKING:
     from dl_anomaly.gui.halcon_app import HalconApp
 
@@ -18,10 +20,10 @@ class MenuMixin:
         # -- File --
         file_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
-        file_menu.add_command(label="\u958b\u555f\u5716\u7247...", command=self._cmd_open_image, accelerator="Ctrl+O")
+        file_menu.add_command(label="\u958b\u555f\u5716\u7247...", command=self._cmd_open_image, accelerator=accel("O"))
         file_menu.add_command(label="\u958b\u555f\u8cc7\u6599\u593e...", command=self._cmd_open_dir)
         file_menu.add_separator()
-        file_menu.add_command(label="\u5132\u5b58\u7576\u524d\u5716\u7247...", command=self._cmd_save_image, accelerator="Ctrl+S")
+        file_menu.add_command(label="\u5132\u5b58\u7576\u524d\u5716\u7247...", command=self._cmd_save_image, accelerator=accel("S"))
         file_menu.add_command(label="\u5132\u5b58\u6240\u6709\u6b65\u9a5f...", command=self._cmd_save_all)
         file_menu.add_separator()
         file_menu.add_command(label="\u5132\u5b58\u6d41\u7a0b...", command=self._cmd_save_recipe)
@@ -55,23 +57,23 @@ class MenuMixin:
         # -- Region --
         region_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                               activebackground="#3a3a5c", activeforeground="#ffffff")
-        region_menu.add_command(label="\u50cf\u7d20\u503c\u6aa2\u67e5\u5668...", command=self._toggle_pixel_inspector, accelerator="Ctrl+I")
+        region_menu.add_command(label="\u50cf\u7d20\u503c\u6aa2\u67e5\u5668...", command=self._toggle_pixel_inspector, accelerator=accel("I"))
         region_menu.add_command(
             label="\u50cf\u7d20\u6aa2\u67e5\u5de5\u5177",
             command=lambda: self._cmd_tool_pixel_inspect(
                 not self._toolbar.get_toggle_state("tool_pixel_inspect")),
-            accelerator="Ctrl+Shift+I",
+            accelerator=accel_shift("I"),
         )
         region_menu.add_command(
             label="\u5340\u57df\u9078\u53d6\u5de5\u5177",
             command=lambda: self._cmd_tool_region_select(
                 not self._toolbar.get_toggle_state("tool_region_select")),
-            accelerator="Ctrl+Shift+R",
+            accelerator=accel_shift("R"),
         )
         region_menu.add_separator()
         region_menu.add_command(label="\u4e8c\u503c\u5316...", command=self._open_binarize_dialog)
         region_menu.add_separator()
-        region_menu.add_command(label="\u95be\u503c\u5206\u5272...", command=self._open_threshold_dialog, accelerator="Ctrl+T")
+        region_menu.add_command(label="\u95be\u503c\u5206\u5272...", command=self._open_threshold_dialog, accelerator=accel("T"))
         region_menu.add_command(label="\u81ea\u52d5\u95be\u503c (Otsu)", command=self._auto_threshold_otsu)
         region_menu.add_command(label="\u81ea\u9069\u61c9\u95be\u503c...", command=self._open_adaptive_threshold_dialog)
         region_menu.add_command(label="\u53ef\u8b8a\u95be\u503c...", command=self._dlg_var_threshold)
@@ -242,6 +244,14 @@ class MenuMixin:
         model_menu.add_separator()
         model_menu.add_command(label="\u6a21\u578b\u8cc7\u8a0a...", command=self._cmd_model_info)
         model_menu.add_command(label="\u8a08\u7b97\u95be\u503c", command=self._cmd_compute_threshold)
+        model_menu.add_separator()
+        pipeline_model_menu = tk.Menu(model_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+                                       activebackground="#3a3a5c", activeforeground="#ffffff")
+        pipeline_model_menu.add_command(label="\u5132\u5b58\u7ba1\u7dda\u6a21\u578b...", command=self._cmd_save_pipeline_model)
+        pipeline_model_menu.add_command(label="\u8f09\u5165\u7ba1\u7dda\u6a21\u578b...", command=self._cmd_load_pipeline_model)
+        pipeline_model_menu.add_separator()
+        pipeline_model_menu.add_command(label="\u7ba1\u7dda\u6a21\u578b\u7ba1\u7406...", command=self._open_pipeline_model_manager)
+        model_menu.add_cascade(label="\u7ba1\u7dda\u6a21\u578b (Pipeline Model)", menu=pipeline_model_menu)
         menubar.add_cascade(label="\u6a21\u578b", menu=model_menu)
 
         # -- View --
@@ -262,18 +272,20 @@ class MenuMixin:
         # -- Tools (工具) --
         tools_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                              activebackground="#3a3a5c", activeforeground="#ffffff")
-        tools_menu.add_command(label="\u5f62\u72c0\u5339\u914d...", command=self._open_shape_matching, accelerator="Ctrl+M")
-        tools_menu.add_command(label="\u91cf\u6e2c\u5de5\u5177...", command=self._open_metrology, accelerator="Ctrl+Shift+M")
+        tools_menu.add_command(label="\u5f62\u72c0\u5339\u914d...", command=self._open_shape_matching, accelerator=accel("M"))
+        tools_menu.add_command(label="\u91cf\u6e2c\u5de5\u5177...", command=self._open_metrology, accelerator=accel_shift("M"))
         tools_menu.add_separator()
-        tools_menu.add_command(label="ROI \u7ba1\u7406...", command=self._open_roi_manager, accelerator="Ctrl+R")
+        tools_menu.add_command(label="ROI \u7ba1\u7406...", command=self._open_roi_manager, accelerator=accel("R"))
         tools_menu.add_separator()
-        tools_menu.add_command(label="PatchCore / ONNX \u6a21\u578b...", command=self._open_advanced_models, accelerator="Ctrl+Shift+P")
+        tools_menu.add_command(label="PatchCore / ONNX \u6a21\u578b...", command=self._open_advanced_models, accelerator=accel_shift("P"))
         tools_menu.add_separator()
-        tools_menu.add_command(label="\u6aa2\u6e2c\u5de5\u5177 (FFT/\u8272\u5f69/OCR/\u689d\u78bc)...", command=self._open_inspection_tools, accelerator="Ctrl+Shift+T")
+        tools_menu.add_command(label="\u6aa2\u6e2c\u5de5\u5177 (FFT/\u8272\u5f69/OCR/\u689d\u78bc)...", command=self._open_inspection_tools, accelerator=accel_shift("T"))
         tools_menu.add_separator()
-        tools_menu.add_command(label="\u5de5\u7a0b\u5de5\u5177 (\u6a19\u5b9a/\u7ba1\u7dda/SPC/\u62fc\u63a5)...", command=self._open_engineering_tools, accelerator="Ctrl+Shift+E")
+        tools_menu.add_command(label="\u5de5\u7a0b\u5de5\u5177 (\u6a19\u5b9a/\u7ba1\u7dda/SPC/\u62fc\u63a5)...", command=self._open_engineering_tools, accelerator=accel_shift("E"))
         tools_menu.add_separator()
-        tools_menu.add_command(label="MVP \u5de5\u5177 (\u76f8\u6a5f/\u6d41\u7a0b/\u5831\u8868)...", command=self._open_mvp_tools, accelerator="Ctrl+Shift+V")
+        tools_menu.add_command(label="MVP \u5de5\u5177 (\u76f8\u6a5f/\u6d41\u7a0b/\u5831\u8868)...", command=self._open_mvp_tools, accelerator=accel_shift("V"))
+        tools_menu.add_separator()
+        tools_menu.add_command(label="\u81ea\u52d5\u95be\u503c\u6821\u6e96...", command=self._open_auto_tune, accelerator=accel_shift("A"))
         menubar.add_cascade(label="\u5de5\u5177", menu=tools_menu)
 
         # -- Help --

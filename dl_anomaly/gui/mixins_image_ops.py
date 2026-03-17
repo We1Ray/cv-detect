@@ -13,6 +13,8 @@ from tkinter import filedialog, messagebox
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
 import cv2
+
+from dl_anomaly.gui.platform_keys import display, display_shift, DELETE_LABEL
 import numpy as np
 from PIL import Image
 
@@ -83,7 +85,7 @@ class ImageOpsMixin:
             title="\u958b\u555f\u5716\u7247",
             filetypes=[
                 ("\u5716\u7247\u6a94\u6848", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff"),
-                ("\u6240\u6709\u6a94\u6848", "*.*"),
+                ("\u6240\u6709\u6a94\u6848", "*"),
             ],
         )
         if path:
@@ -716,27 +718,28 @@ class ImageOpsMixin:
 
     def _cmd_shortcuts(self: "HalconApp") -> None:
         shortcuts = (
-            "Ctrl+O         \u958b\u555f\u5716\u7247\n"
-            "Ctrl+S         \u5132\u5b58\u5716\u7247\n"
-            "Ctrl+Z         \u5fa9\u539f\n"
-            "Ctrl+Y         \u91cd\u505a\n"
-            "Ctrl+I         \u50cf\u7d20\u503c\u6aa2\u67e5\u5668\u8996\u7a97\n"
-            "Ctrl+Shift+I   \u50cf\u7d20\u6aa2\u67e5\u5de5\u5177\n"
-            "Ctrl+Shift+R   \u5340\u57df\u9078\u53d6\u5de5\u5177\n"
-            "Escape         \u8fd4\u56de\u5e73\u79fb\u6a21\u5f0f\n"
-            "Ctrl+T         \u95be\u503c\u5206\u5272\n"
-            "Space          \u7e2e\u653e\u81f3\u7a97\u53e3\n"
-            "+/-            \u653e\u5927/\u7e2e\u5c0f\n"
-            "F5             \u6aa2\u6e2c\u5716\u7247\n"
-            "F6             \u8a13\u7df4\u6a21\u578b\n"
-            "F8             \u8173\u672c\u7de8\u8f2f\u5668\n"
-            "F9             \u57f7\u884c\u8173\u672c\n"
-            "Delete         \u522a\u9664\u6b65\u9a5f\n"
+            f"{display('O'):16s}\u958b\u555f\u5716\u7247\n"
+            f"{display('S'):16s}\u5132\u5b58\u5716\u7247\n"
+            f"{display('Z'):16s}\u5fa9\u539f\n"
+            f"{display('Y'):16s}\u91cd\u505a\n"
+            f"{display('I'):16s}\u50cf\u7d20\u503c\u6aa2\u67e5\u5668\u8996\u7a97\n"
+            f"{display_shift('I'):16s}\u50cf\u7d20\u6aa2\u67e5\u5de5\u5177\n"
+            f"{display_shift('R'):16s}\u5340\u57df\u9078\u53d6\u5de5\u5177\n"
+            "Escape          \u8fd4\u56de\u5e73\u79fb\u6a21\u5f0f\n"
+            f"{display('T'):16s}\u95be\u503c\u5206\u5272\n"
+            "Space           \u7e2e\u653e\u81f3\u7a97\u53e3\n"
+            "+/-             \u653e\u5927/\u7e2e\u5c0f\n"
+            "F5              \u6aa2\u6e2c\u5716\u7247\n"
+            "F6              \u8a13\u7df4\u6a21\u578b\n"
+            "F8              \u8173\u672c\u7de8\u8f2f\u5668\n"
+            "F9              \u57f7\u884c\u8173\u672c\n"
+            f"{DELETE_LABEL:16s}\u522a\u9664\u6b65\u9a5f\n"
             "\n"
             "\u6ed1\u9f20\u5de6\u9375\u62d6\u66f3    \u5e73\u79fb\u5716\u7247 (\u5e73\u79fb\u6a21\u5f0f)\n"
             "\u6ed1\u9f20\u6efe\u8f2a        \u7e2e\u653e\n"
             "\u96d9\u64ca\u5de6\u9375        \u7e2e\u653e\u81f3\u7a97\u53e3\n"
-            "\u53f3\u9375\u62d6\u66f3        \u7e2e\u653e\u81f3\u9078\u5340"
+            "\u53f3\u9375            \u5feb\u901f\u9078\u55ae (\u88c1\u5207/\u5206\u5272/\u95be\u503c...)\n"
+            "\u4e2d\u9375\u62d6\u66f3        \u7e2e\u653e\u81f3\u9078\u5340"
         )
         messagebox.showinfo("\u5feb\u6377\u9375", shortcuts)
 
@@ -767,7 +770,7 @@ class ImageOpsMixin:
         path = filedialog.asksaveasfilename(
             title="\u5132\u5b58\u6d41\u7a0b",
             defaultextension=".json",
-            filetypes=[("JSON", "*.json"), ("\u6240\u6709\u6a94\u6848", "*.*")],
+            filetypes=[("JSON", "*.json"), ("\u6240\u6709\u6a94\u6848", "*")],
         )
         if path:
             recipe.save(path)

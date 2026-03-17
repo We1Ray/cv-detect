@@ -736,7 +736,7 @@ class ROIManagerDialog(tk.Toplevel):
         path = filedialog.asksaveasfilename(
             title="儲存 ROI",
             defaultextension=".json",
-            filetypes=[("JSON 檔案", "*.json"), ("所有檔案", "*.*")],
+            filetypes=[("JSON 檔案", "*.json"), ("所有檔案", "*")],
             parent=self,
         )
         if not path:
@@ -754,7 +754,7 @@ class ROIManagerDialog(tk.Toplevel):
         """Load ROIs from a JSON file."""
         path = filedialog.askopenfilename(
             title="載入 ROI",
-            filetypes=[("JSON 檔案", "*.json"), ("所有檔案", "*.*")],
+            filetypes=[("JSON 檔案", "*.json"), ("所有檔案", "*")],
             parent=self,
         )
         if not path:

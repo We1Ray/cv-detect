@@ -610,7 +610,14 @@ class PatchCoreInference:
         ``'cuda'`` or ``'cpu'``.
     """
 
-    def __init__(self, model: PatchCoreModel, device: str = "cpu") -> None:
+    def __init__(
+        self,
+        model: PatchCoreModel,
+        device: str = "cpu",
+        n_neighbors: int = 9,
+        smooth_sigma: float = 4.0,
+        feature_resize_size: Optional[Tuple[int, int]] = None,
+    ) -> None:
         self.model = model
         self.device = device
 
@@ -624,8 +631,18 @@ class PatchCoreInference:
         self._bank_f32: np.ndarray = model.memory_bank.astype(np.float32)
 
         # Gaussian kernel for anomaly map smoothing
-        self._smooth_sigma: float = 4.0
-        self._knn_k: int = 9
+        self._smooth_sigma: float = smooth_sigma
+        self._knn_k: int = n_neighbors
+
+        # Optional explicit feature resize target (None = use smallest layer)
+        self._feature_resize_size: Optional[Tuple[int, int]] = feature_resize_size
+
+        # Persist tuneable parameters in the model config so they survive
+        # save/load round-trips.
+        model.config.setdefault("n_neighbors", n_neighbors)
+        model.config.setdefault("smooth_sigma", smooth_sigma)
+        if feature_resize_size is not None:
+            model.config.setdefault("feature_resize_size", list(feature_resize_size))
 
         # Pre-fit NearestNeighbors index for fast k-NN queries
         self._nn_index = NearestNeighbors(
@@ -704,10 +721,20 @@ class PatchCoreInference:
     def _merge_features(
         self, features: Dict[str, torch.Tensor],
     ) -> torch.Tensor:
-        """Concatenate multi-layer features, matching spatial resolution."""
+        """Concatenate multi-layer features, matching spatial resolution.
+
+        When ``_feature_resize_size`` is set, all feature maps are resized
+        to that explicit ``(H, W)`` instead of defaulting to the smallest
+        layer size.
+        """
         tensors = list(features.values())
-        target_h = min(t.shape[2] for t in tensors)
-        target_w = min(t.shape[3] for t in tensors)
+
+        if self._feature_resize_size is not None:
+            target_h, target_w = self._feature_resize_size
+        else:
+            # Default behaviour: use the smallest spatial size
+            target_h = min(t.shape[2] for t in tensors)
+            target_w = min(t.shape[3] for t in tensors)
 
         aligned: List[torch.Tensor] = []
         for t in tensors:

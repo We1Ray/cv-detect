@@ -2,6 +2,123 @@
 
 基於電腦視覺的工業瑕疵檢測系統，提供兩種獨立的檢測方法，搭配 HALCON HDevelop 風格的圖形化操作介面。涵蓋從影像擷取、前處理、瑕疵偵測到統計分析的完整檢測流程。
 
+## 瑕疵檢測演算法展示
+
+> 以 PCB（印刷電路板）瑕疵影像即時展示各檢測管線的處理過程與結果。
+
+### 完整檢測管線總覽
+
+從影像輸入、前處理、邊緣偵測、分割到異常圖生成的完整流程：
+
+<p align="center">
+  <img src="assets/demo/09_pipeline_overview.gif" alt="Pipeline Overview" width="600">
+</p>
+
+---
+
+### 傳統電腦視覺方法
+
+<table>
+<tr>
+<td align="center" width="50%">
+
+**邊緣檢測 (Edge Detection)**
+
+Canny / Sobel 梯度邊緣提取
+
+<img src="assets/demo/01_edge_detection.gif" alt="Edge Detection" width="400">
+
+</td>
+<td align="center" width="50%">
+
+**連通區域分析 (Blob Analysis)**
+
+Otsu 閾值分割 + 連通元件標記
+
+<img src="assets/demo/02_blob_analysis.gif" alt="Blob Analysis" width="400">
+
+</td>
+</tr>
+<tr>
+<td align="center">
+
+**形態學運算 (Morphology)**
+
+侵蝕 / 膨脹 / 開運算 / 閉運算
+
+<img src="assets/demo/03_morphology.gif" alt="Morphology" width="400">
+
+</td>
+<td align="center">
+
+**FFT 頻域分析 (Frequency Domain)**
+
+頻譜視覺化 + 高斯高/低通濾波
+
+<img src="assets/demo/04_fft_frequency.gif" alt="FFT Frequency" width="400">
+
+</td>
+</tr>
+<tr>
+<td align="center">
+
+**色彩檢測 (Color Inspection)**
+
+CIE Lab Delta-E 色差圖 + K-means 調色板
+
+<img src="assets/demo/05_color_inspection.gif" alt="Color Inspection" width="400">
+
+</td>
+<td align="center">
+
+**形狀匹配 (Shape Matching)**
+
+梯度方向餘弦相似度 + 金字塔搜尋
+
+<img src="assets/demo/06_shape_matching.gif" alt="Shape Matching" width="400">
+
+</td>
+</tr>
+</table>
+
+### 深度學習方法
+
+<table>
+<tr>
+<td align="center" width="50%">
+
+**自編碼器異常檢測 (Autoencoder)**
+
+卷積自編碼器重建誤差 + MSE/SSIM 混合評分
+
+<img src="assets/demo/07_autoencoder.gif" alt="Autoencoder" width="400">
+
+</td>
+<td align="center" width="50%">
+
+**PatchCore 記憶庫檢測**
+
+預訓練 CNN 特徵 + ball-tree kNN 異常評分
+
+<img src="assets/demo/08_patchcore.gif" alt="PatchCore" width="400">
+
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>重新生成 Demo GIF</b></summary>
+
+```bash
+conda activate cv-detect
+python generate_demo_gifs.py
+```
+
+GIF 輸出至 `assets/demo/`，使用 PCB Defect Dataset v3 (CC BY 4.0) 的影像。
+</details>
+
+---
+
 ## 功能總覽
 
 ### 核心檢測引擎
@@ -44,6 +161,14 @@
 | SPC 統計 | SQLite 結果資料庫、Cp/Cpk/Pp/Ppk、Western Electric 規則、管制圖 | `shared/core/results_db.py` |
 | 影像拼接 | 全景/條帶/網格模式、ORB/SIFT/AKAZE 特徵、多頻帶混合 | `shared/core/stitching.py` |
 
+### Phase 5 — 管線模型
+
+| 模組 | 功能 | 核心檔案 |
+|------|------|---------|
+| 管線模型 | 將完整檢測管線打包為 `.cpmodel` ZIP 檔、嵌入模型/模板/標定檔、可攜式部署 | `shared/core/pipeline_model.py` |
+| 模型註冊表 | 掃描/搜尋/載入/刪除 `.cpmodel` 檔案管理 | `shared/core/pipeline_model.py` |
+| 管線模型 GUI | 儲存/載入/管理 `.cpmodel` 對話框 | `dl_anomaly/gui/pipeline_model_dialog.py` |
+
 ### MVP 功能
 
 | 模組 | 功能 | 核心檔案 |
@@ -80,14 +205,31 @@ cv-detect/
 │   │   ├── mixins_dialogs.py    #   對話框 mixin
 │   │   ├── mixins_region.py     #   區域操作 mixin
 │   │   ├── mixins_halcon.py     #   HALCON 運算子 mixin
-│   │   ├── image_viewer.py      #   影像檢視器（縮放、平移）
+│   │   ├── image_viewer.py      #   影像檢視器（縮放、平移、像素追蹤）
 │   │   ├── pipeline_panel.py    #   管線面板（步驟縮圖）
 │   │   ├── toolbar.py           #   工具列
+│   │   ├── operations_panel.py  #   操作面板
+│   │   ├── properties_panel.py  #   屬性面板
+│   │   ├── pixel_inspector.py   #   像素值檢測器
+│   │   ├── train_tab.py         #   訓練分頁
+│   │   ├── inspect_tab.py       #   檢測分頁
+│   │   ├── settings_tab.py      #   設定分頁
+│   │   ├── shape_matching_dialog.py    # 形狀匹配對話框
+│   │   ├── metrology_dialog.py         # 量測工具對話框
+│   │   ├── roi_dialog.py               # ROI 管理對話框
 │   │   ├── advanced_models_dialog.py   # PatchCore/ONNX 對話框
 │   │   ├── inspection_tools_dialog.py  # 檢測工具（FFT/色彩/OCR/條碼）
 │   │   ├── engineering_tools_dialog.py # 工程工具（標定/管線/SPC/拼接）
 │   │   ├── mvp_tools_dialog.py  #   MVP 工具（相機/流程/報告）
-│   │   └── ...                  #   其餘對話框與面板
+│   │   ├── blob_analysis.py     #   Blob 分析
+│   │   ├── region_filter_dialog.py #  區域篩選對話框
+│   │   ├── threshold_dialog.py  #   閾值調整對話框
+│   │   ├── compare_dialog.py    #   影像比對對話框
+│   │   ├── batch_compare_dialog.py #  批次比對對話框
+│   │   ├── recipe_apply_dialog.py  #  配方套用對話框
+│   │   ├── pipeline_model_dialog.py # 管線模型儲存/載入/管理對話框
+│   │   ├── script_editor.py     #   腳本編輯器
+│   │   └── dialogs.py           #   通用對話框集合
 │   └── visualization/           # 視覺化
 │       ├── heatmap.py           #   誤差熱力圖、瑕疵疊加（遮罩優化）
 │       ├── report.py            #   統計報告
@@ -106,10 +248,22 @@ cv-detect/
 │   │   └── *.py                 #   其餘為 shared/core/ 的 re-export
 │   ├── pipeline/                # 管線編排
 │   ├── gui/                     # Tkinter GUI（繁體中文介面）
+│   │   ├── halcon_app.py        #   主視窗
+│   │   ├── image_viewer.py      #   影像檢視器
+│   │   ├── pipeline_panel.py    #   管線面板
+│   │   ├── toolbar.py           #   工具列
+│   │   ├── shape_matching_dialog.py    # 形狀匹配對話框
+│   │   ├── metrology_dialog.py         # 量測工具對話框
+│   │   ├── roi_dialog.py               # ROI 管理對話框
+│   │   ├── advanced_models_dialog.py   # PatchCore/ONNX 對話框
+│   │   ├── inspection_tools_dialog.py  # 檢測工具
+│   │   ├── engineering_tools_dialog.py # 工程工具
+│   │   ├── mvp_tools_dialog.py  #   MVP 工具
+│   │   └── ...                  #   其餘面板與對話框
 │   └── visualization/           # 視覺化
 │
 ├── shared/                      # 共用模組（單一真實來源）
-│   ├── core/                    # 整合 Phase 1–4 核心演算法（15 檔案）
+│   ├── core/                    # 整合 Phase 1–5 核心演算法（16 檔案）
 │   │   ├── patchcore.py         #   PatchCore（ball-tree + einsum）
 │   │   ├── onnx_engine.py       #   ONNX 推論（CUDA/CoreML/CPU）
 │   │   ├── camera.py            #   工業相機介面
@@ -124,6 +278,7 @@ cv-detect/
 │   │   ├── color_inspect.py     #   色彩檢測
 │   │   ├── ocr_engine.py        #   OCR 引擎
 │   │   ├── barcode_engine.py    #   條碼引擎
+│   │   ├── pipeline_model.py    #   管線模型打包與註冊表
 │   │   └── region.py            #   區域資料結構
 │   ├── app_state.py             # 應用程式狀態持久化
 │   ├── progress_manager.py      # 進度條管理
@@ -135,15 +290,21 @@ cv-detect/
 ├── tests/                       # pytest 測試套件
 │   ├── conftest.py              # 共用 fixtures（合成影像、暫存目錄）
 │   ├── test_dl_anomaly/         # DL 模組測試
-│   │   ├── test_config.py       #   組態與裝置選擇（11 tests）
-│   │   ├── test_anomaly_scorer.py #  異常評分（17 tests）
-│   │   ├── test_preprocessor.py #   前處理（8 tests）
-│   │   └── test_variation_model.py # Welford 演算法（14 tests）
+│   │   ├── test_config.py       #   組態與裝置選擇（14 函式）
+│   │   ├── test_anomaly_scorer.py #  異常評分（17 函式）
+│   │   ├── test_preprocessor.py #   前處理（8 函式）
+│   │   └── test_variation_model.py # Welford 演算法（17 函式）
 │   └── test_shared/             # 共用模組測試
-│       └── test_validation.py   #   輸入驗證（21 tests）
+│       ├── test_validation.py   #   輸入驗證（22 函式）
+│       └── test_pipeline_model.py # 管線模型（30 函式）
 │
 ├── docs/                        # 文件與教學
-│   └── CV_Defect_Detection_Tutorial.pdf
+│   ├── CV_Defect_Detection_Tutorial.pdf  # 教學手冊（PDF）
+│   ├── generate_cv_tutorial.py  #   教學 PDF 生成腳本
+│   ├── _ch1_6.py                #   第 1–6 章內容
+│   ├── _ch7_13.py               #   第 7–13 章內容
+│   ├── _ch15_19.py              #   第 15–19 章內容
+│   └── _ch20_25.py              #   第 20–25 章內容
 ├── pyproject.toml               # 專案定義與相依管理
 ├── requirements.txt             # pip 相依套件
 └── test_all_functions.py        # 整合測試套件（1,489 行）
@@ -295,7 +456,7 @@ pyinstaller build.spec --noconfirm
 ## 測試
 
 ```bash
-# pytest 測試套件（91 tests，~1.7 秒）
+# pytest 測試套件（108 函式 / 121 test cases，含參數化測試）
 pytest tests/ -q
 
 # 整合測試
@@ -306,11 +467,12 @@ pytest 測試涵蓋：
 
 | 測試模組 | 數量 | 內容 |
 |---------|------|------|
-| `test_config.py` | 11 | 組態預設值、裝置選擇、布林解析 |
+| `test_config.py` | 14 (23) | 組態預設值、裝置選擇、布林解析（含參數化） |
 | `test_anomaly_scorer.py` | 17 | 逐像素誤差、影像評分、閾值分類 |
 | `test_preprocessor.py` | 8 | 前處理 transform、正規化反轉 |
-| `test_variation_model.py` | 14 | Welford 演算法、均值/標準差、存讀 |
-| `test_validation.py` | 21 | 影像驗證、核大小、範圍檢查 |
+| `test_variation_model.py` | 17 | Welford 演算法、均值/標準差、存讀 |
+| `test_validation.py` | 22 (26) | 影像驗證、核大小、範圍檢查（含參數化） |
+| `test_pipeline_model.py` | 30 | 路徑處理、建構/儲存/載入、註冊表 CRUD |
 
 ## 技術架構
 
@@ -417,7 +579,7 @@ auto → CUDA (NVIDIA) → MPS (Apple Silicon M1+) → CPU
 
 ### 共用核心模組
 
-15 個跨模組共用的演算法檔案整合至 `shared/core/`，兩個應用模組透過 re-export wrapper 引用，確保單一真實來源（Single Source of Truth）。
+16 個跨模組共用的演算法檔案整合至 `shared/core/`，兩個應用模組透過 re-export wrapper 引用，確保單一真實來源（Single Source of Truth）。
 
 ## License
 

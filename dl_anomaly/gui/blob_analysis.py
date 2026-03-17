@@ -709,7 +709,7 @@ class BlobAnalysisDialog(tk.Toplevel):
             parent=self,
             title="匯出 CSV",
             defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            filetypes=[("CSV files", "*.csv"), ("All files", "*")],
         )
         if not path:
             return

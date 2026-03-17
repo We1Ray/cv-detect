@@ -19,6 +19,8 @@ from typing import Callable, Dict, List, Optional, Tuple
 import numpy as np
 from PIL import Image, ImageTk
 
+from dl_anomaly.gui.platform_keys import display
+
 
 class PipelineStep:
     """Data class for a single pipeline step."""
@@ -101,7 +103,11 @@ class PipelinePanel(ttk.Frame):
         self._drag_source_index: Optional[int] = None
         self._drag_indicator: Optional[tk.Frame] = None
 
+        # Empty state hint
+        self._empty_hint: Optional[tk.Label] = None
+
         self._build_ui()
+        self._show_empty_hint()
 
     # ------------------------------------------------------------------
     # UI
@@ -121,7 +127,7 @@ class PipelinePanel(ttk.Frame):
             title_frame,
             text="\u6e05\u9664",  # "Clear"
             width=5,
-            command=self.clear_all,
+            command=self._on_clear,
         )
         self._clear_btn.pack(side=tk.RIGHT, padx=2)
 
@@ -219,6 +225,7 @@ class PipelinePanel(ttk.Frame):
 
     def add_step(self, name: str, array: np.ndarray, select: bool = True, region=None, op_meta=None) -> int:
         """Add a new pipeline step and return its index."""
+        self._hide_empty_hint()
         step = PipelineStep(name, array)
         step.region = region
         step.op_meta = op_meta
@@ -235,6 +242,19 @@ class PipelinePanel(ttk.Frame):
 
         return idx
 
+    def _on_clear(self) -> None:
+        """Ask for confirmation before clearing all steps."""
+        if not self._steps:
+            return
+        from tkinter import messagebox
+        if messagebox.askyesno(
+            "\u78ba\u8a8d\u6e05\u9664",
+            f"\u78ba\u5b9a\u8981\u6e05\u9664\u6240\u6709 {len(self._steps)} \u500b\u8655\u7406\u6b65\u9a5f\uff1f\n\u6b64\u64cd\u4f5c\u7121\u6cd5\u5fa9\u539f\u3002",
+            icon="warning",
+            parent=self,
+        ):
+            self.clear_all()
+
     def clear_all(self) -> None:
         """Remove all steps."""
         self._steps.clear()
@@ -242,6 +262,28 @@ class PipelinePanel(ttk.Frame):
         for child in self._inner_frame.winfo_children():
             child.destroy()
         self._update_thumbnails()
+        self._show_empty_hint()
+
+    def _show_empty_hint(self) -> None:
+        """Show hint when pipeline is empty."""
+        if hasattr(self, '_empty_hint') and self._empty_hint is not None:
+            return
+        self._empty_hint = tk.Label(
+            self._inner_frame,
+            text=f"\u958b\u555f\u5716\u7247\u4ee5\u958b\u59cb\n{display('O')}",
+            bg="#2b2b2b",
+            fg="#555555",
+            font=("Segoe UI", 10),
+            justify=tk.CENTER,
+            pady=40,
+        )
+        self._empty_hint.pack(fill=tk.X)
+
+    def _hide_empty_hint(self) -> None:
+        """Remove the empty-state hint label."""
+        if hasattr(self, '_empty_hint') and self._empty_hint is not None:
+            self._empty_hint.destroy()
+            self._empty_hint = None
 
     def get_step(self, index: int) -> Optional[PipelineStep]:
         if 0 <= index < len(self._steps):
@@ -271,6 +313,10 @@ class PipelinePanel(ttk.Frame):
         del self._steps[index]
         self._rebuild_step_list()
         self._update_thumbnails()
+        if len(self._steps) == 0:
+            self._selected_index = -1
+            self._show_empty_hint()
+            return
         if self._selected_index >= len(self._steps):
             self._selected_index = len(self._steps) - 1
         if self._selected_index >= 0:

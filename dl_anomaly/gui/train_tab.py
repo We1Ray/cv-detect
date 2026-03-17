@@ -64,6 +64,52 @@ class TrainTab(ttk.Frame):
         self._count_label = ttk.Label(dir_frame, text="影像數量：--")
         self._count_label.grid(row=0, column=3, padx=8)
 
+        # --- Hyperparameters -----------------------------------------
+        hyper_frame = ttk.LabelFrame(self, text="訓練參數", padding=6)
+        hyper_frame.pack(fill=tk.X, padx=6, pady=(3, 3))
+
+        # Row 1: Learning Rate, Epochs, Early Stopping
+        row1 = ttk.Frame(hyper_frame)
+        row1.pack(fill=tk.X, pady=2)
+        ttk.Label(row1, text="學習率:").pack(side=tk.LEFT)
+        self._lr_var = tk.StringVar(value=str(self.config.learning_rate))
+        ttk.Entry(row1, textvariable=self._lr_var, width=10).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row1, text="訓練輪數:").pack(side=tk.LEFT, padx=(12, 0))
+        self._epochs_var = tk.IntVar(value=self.config.num_epochs)
+        ttk.Spinbox(row1, from_=1, to=1000, textvariable=self._epochs_var, width=6).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row1, text="早停耐心:").pack(side=tk.LEFT, padx=(12, 0))
+        self._patience_var = tk.IntVar(value=self.config.early_stopping_patience)
+        ttk.Spinbox(row1, from_=1, to=100, textvariable=self._patience_var, width=6).pack(side=tk.LEFT, padx=4)
+
+        # Row 2: Architecture params
+        row2 = ttk.Frame(hyper_frame)
+        row2.pack(fill=tk.X, pady=2)
+        ttk.Label(row2, text="潛在維度:").pack(side=tk.LEFT)
+        self._latent_dim_var = tk.IntVar(value=self.config.latent_dim)
+        ttk.Spinbox(row2, from_=16, to=1024, increment=16, textvariable=self._latent_dim_var, width=6).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row2, text="基礎通道:").pack(side=tk.LEFT, padx=(12, 0))
+        self._base_ch_var = tk.IntVar(value=self.config.base_channels)
+        ttk.Spinbox(row2, from_=8, to=256, increment=8, textvariable=self._base_ch_var, width=6).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row2, text="編碼器層數:").pack(side=tk.LEFT, padx=(12, 0))
+        self._n_blocks_var = tk.IntVar(value=self.config.num_encoder_blocks)
+        ttk.Spinbox(row2, from_=1, to=8, textvariable=self._n_blocks_var, width=6).pack(side=tk.LEFT, padx=4)
+
+        # Row 3: Augmentation params
+        row3 = ttk.Frame(hyper_frame)
+        row3.pack(fill=tk.X, pady=2)
+        ttk.Label(row3, text="旋轉範圍(\u00b0):").pack(side=tk.LEFT)
+        self._aug_rotation_var = tk.IntVar(value=5)
+        ttk.Spinbox(row3, from_=0, to=180, textvariable=self._aug_rotation_var, width=5).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row3, text="亮度抖動:").pack(side=tk.LEFT, padx=(8, 0))
+        self._aug_brightness_var = tk.DoubleVar(value=0.05)
+        ttk.Entry(row3, textvariable=self._aug_brightness_var, width=6).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row3, text="對比抖動:").pack(side=tk.LEFT, padx=(8, 0))
+        self._aug_contrast_var = tk.DoubleVar(value=0.05)
+        ttk.Entry(row3, textvariable=self._aug_contrast_var, width=6).pack(side=tk.LEFT, padx=4)
+        ttk.Label(row3, text="水平翻轉:").pack(side=tk.LEFT, padx=(8, 0))
+        self._aug_hflip_var = tk.DoubleVar(value=0.5)
+        ttk.Entry(row3, textvariable=self._aug_hflip_var, width=5).pack(side=tk.LEFT, padx=4)
+
         # --- Controls -------------------------------------------------
         ctrl_frame = ttk.Frame(self, padding=6)
         ctrl_frame.pack(fill=tk.X, padx=6)
@@ -145,6 +191,18 @@ class TrainTab(ttk.Frame):
             return
 
         self.config.train_image_dir = train_dir
+
+        # Apply hyperparameters from GUI to config
+        try:
+            self.config.learning_rate = float(self._lr_var.get())
+            self.config.num_epochs = self._epochs_var.get()
+            self.config.early_stopping_patience = self._patience_var.get()
+            self.config.latent_dim = self._latent_dim_var.get()
+            self.config.base_channels = self._base_ch_var.get()
+            self.config.num_encoder_blocks = self._n_blocks_var.get()
+        except (ValueError, tk.TclError):
+            pass
+
         self._train_losses.clear()
         self._val_losses.clear()
         self._pipeline = TrainingPipeline(self.config)

@@ -352,14 +352,38 @@ def compute_delta_e_map(
     """Per-pixel Delta-E map against a reference L*a*b* colour.
 
     Returns a float32 array with shape ``(H, W)`` where each value is the
-    Delta-E of that pixel relative to *reference_color*.  Only CIE76 is
-    supported for the per-pixel map (CIEDE2000 would be too slow).
+    Delta-E of that pixel relative to *reference_color*.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        BGR uint8 image.
+    reference_color : tuple
+        ``(L, a, b)`` reference colour.
+    method : str
+        ``"CIE76"`` (fast, vectorised) or ``"CIEDE2000"`` (more perceptually
+        accurate but significantly slower for large images).
     """
     validate_image(image)
     lab = rgb_to_lab(image)
     ref = np.array(reference_color, dtype=np.float32).reshape(1, 1, 3)
-    diff = lab - ref
-    de_map = np.sqrt(np.sum(diff ** 2, axis=2))
+
+    if method.upper() == "CIE76":
+        diff = lab - ref
+        de_map = np.sqrt(np.sum(diff ** 2, axis=2))
+    elif method.upper() == "CIEDE2000":
+        h, w = lab.shape[:2]
+        de_map = np.empty((h, w), dtype=np.float32)
+        ref_t = (float(reference_color[0]), float(reference_color[1]), float(reference_color[2]))
+        for r in range(h):
+            for c in range(w):
+                pixel_lab = (float(lab[r, c, 0]), float(lab[r, c, 1]), float(lab[r, c, 2]))
+                de_map[r, c] = delta_e_ciede2000(pixel_lab, ref_t)
+    else:
+        raise ValueError(
+            f"Unknown method: {method!r}. Use 'CIE76' or 'CIEDE2000'."
+        )
+
     return de_map.astype(np.float32)
 
 
@@ -468,8 +492,18 @@ def check_color_uniformity(
     image: np.ndarray,
     roi: Optional[Tuple[int, int, int, int]] = None,
     max_std: float = 5.0,
+    tolerance_threshold: Optional[float] = None,
 ) -> Dict:
     """Check whether colour is uniform within an ROI.
+
+    Parameters
+    ----------
+    max_std : float
+        Maximum acceptable standard deviation per L/a/b channel.
+    tolerance_threshold : float, optional
+        If provided, overrides *max_std* as the uniformity threshold.
+        This is a convenience alias so callers can use a more descriptive
+        parameter name.
 
     Returns
     -------
@@ -478,6 +512,7 @@ def check_color_uniformity(
         "mean_lab": tuple}``
     """
     validate_image(image)
+    threshold = tolerance_threshold if tolerance_threshold is not None else max_std
     patch = _crop_roi(image, roi)
     lab = cv2.cvtColor(patch, cv2.COLOR_BGR2Lab).astype(np.float32)
 
@@ -486,7 +521,7 @@ def check_color_uniformity(
     std_b = float(np.std(lab[:, :, 2]))
     mean_lab = tuple(float(v) for v in cv2.mean(lab)[:3])
 
-    uniform = std_l <= max_std and std_a <= max_std and std_b <= max_std
+    uniform = std_l <= threshold and std_a <= threshold and std_b <= threshold
 
     return {
         "uniform": uniform,
@@ -507,11 +542,16 @@ def check_color_tolerance(
     """Return a binary mask of pixels within *tolerance* of *reference_lab*.
 
     Pixels within tolerance are set to 255; those outside are 0.
-    For speed, the per-pixel computation always uses CIE76 regardless of
-    *method*.  The *method* parameter is reserved for future use.
+
+    Parameters
+    ----------
+    method : str
+        ``"CIE76"`` or ``"CIEDE2000"``.  The chosen method is forwarded to
+        :func:`compute_delta_e_map` for the per-pixel calculation.  Note
+        that ``"CIEDE2000"`` is significantly slower for large images.
     """
     validate_image(image)
-    de_map = compute_delta_e_map(image, reference_lab, method="CIE76")
+    de_map = compute_delta_e_map(image, reference_lab, method=method)
     mask = np.zeros_like(de_map, dtype=np.uint8)
     mask[de_map <= tolerance] = 255
     return mask

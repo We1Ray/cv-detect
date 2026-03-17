@@ -7,7 +7,7 @@ and inference, plus an inverse-normalisation helper for visualisation.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import torch
@@ -43,24 +43,57 @@ class ImagePreprocessor:
     # Public API
     # ------------------------------------------------------------------
 
-    def get_transforms(self, augment: bool = False) -> T.Compose:
+    # Default augmentation parameters -- kept as a class attribute so
+    # callers can inspect the defaults without instantiating.
+    DEFAULT_AUGMENTATION_PARAMS: Dict[str, float] = {
+        "rotation_range": 5,
+        "brightness_jitter": 0.05,
+        "contrast_jitter": 0.05,
+        "saturation_jitter": 0.02,
+        "hue_jitter": 0.01,
+        "horizontal_flip_p": 0.5,
+        "vertical_flip_p": 0.0,
+    }
+
+    def get_transforms(
+        self,
+        augment: bool = False,
+        augmentation_params: Optional[Dict[str, float]] = None,
+    ) -> T.Compose:
         """Return a torchvision ``Compose`` pipeline.
 
-        Transforms are cached after the first call to avoid rebuilding
-        the pipeline repeatedly.
+        Transforms are cached after the first call **only** when
+        *augmentation_params* is ``None`` (i.e. using defaults), to avoid
+        returning stale transforms when custom parameters are provided.
 
         Parameters
         ----------
         augment:
-            When *True*, lightweight augmentations (flip, rotation, jitter) are
-            prepended so the pipeline is suitable for training.
+            When *True*, lightweight augmentations (flip, rotation, jitter)
+            are prepended so the pipeline is suitable for training.
+        augmentation_params:
+            Optional dictionary overriding one or more default augmentation
+            values.  Supported keys:
+
+            - ``rotation_range`` (default 5)
+            - ``brightness_jitter`` (default 0.05)
+            - ``contrast_jitter`` (default 0.05)
+            - ``saturation_jitter`` (default 0.02)
+            - ``hue_jitter`` (default 0.01)
+            - ``horizontal_flip_p`` (default 0.5)
+            - ``vertical_flip_p`` (default 0.0)
+
+            When ``None``, the class defaults are used and the result is
+            cached for subsequent calls.
         """
-        if augment:
-            if self._train_transform is not None:
-                return self._train_transform
-        else:
-            if self._eval_transform is not None:
-                return self._eval_transform
+        # Return cached transform only when using defaults
+        if augmentation_params is None:
+            if augment:
+                if self._train_transform is not None:
+                    return self._train_transform
+            else:
+                if self._eval_transform is not None:
+                    return self._eval_transform
 
         ops: list = []
 
@@ -70,22 +103,33 @@ class ImagePreprocessor:
         ops.append(T.Resize((self.image_size, self.image_size), interpolation=T.InterpolationMode.BILINEAR))
 
         if augment:
-            ops.extend(
-                [
-                    T.RandomHorizontalFlip(p=0.5),
-                    T.RandomRotation(degrees=5),
-                    T.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.02, hue=0.01),
-                ]
-            )
+            # Merge caller overrides on top of defaults
+            params = dict(self.DEFAULT_AUGMENTATION_PARAMS)
+            if augmentation_params is not None:
+                params.update(augmentation_params)
+
+            if params["vertical_flip_p"] > 0:
+                ops.append(T.RandomVerticalFlip(p=params["vertical_flip_p"]))
+            ops.append(T.RandomHorizontalFlip(p=params["horizontal_flip_p"]))
+            ops.append(T.RandomRotation(degrees=params["rotation_range"]))
+            ops.append(T.ColorJitter(
+                brightness=params["brightness_jitter"],
+                contrast=params["contrast_jitter"],
+                saturation=params["saturation_jitter"],
+                hue=params["hue_jitter"],
+            ))
 
         ops.append(T.ToTensor())  # [0, 1]
         ops.append(T.Normalize(mean=self.mean, std=self.std))
 
         composed = T.Compose(ops)
-        if augment:
-            self._train_transform = composed
-        else:
-            self._eval_transform = composed
+
+        # Only cache when using defaults
+        if augmentation_params is None:
+            if augment:
+                self._train_transform = composed
+            else:
+                self._eval_transform = composed
         return composed
 
     def load_and_preprocess(self, path: Union[str, Path]) -> torch.Tensor:

@@ -259,6 +259,7 @@ def create_shape_model(
     scale_max: float = 1.0,
     scale_step: float = 0.01,
     min_contrast: int = _DEFAULT_MIN_CONTRAST,
+    max_contour_points: int = _MAX_CONTOUR_POINTS,
 ) -> ShapeModel:
     """Create a shape model from a template image.
 
@@ -278,6 +279,10 @@ def create_shape_model(
         scale_max:     Maximum scale factor.
         scale_step:    Scale resolution (``> 0``).
         min_contrast:  Minimum gradient magnitude to accept an edge pixel.
+        max_contour_points:
+                       Maximum number of contour points to retain per
+                       pyramid level.  Excess points are uniformly
+                       sub-sampled.  Defaults to :data:`_MAX_CONTOUR_POINTS`.
 
     Returns:
         A :class:`ShapeModel` ready for use with :func:`find_shape_model`.
@@ -293,7 +298,7 @@ def create_shape_model(
     gx, gy, mag, ang = _compute_gradients(gray)
 
     contour_pts, contour_ang = _extract_contour_points(
-        mag, ang, float(min_contrast),
+        mag, ang, float(min_contrast), max_points=max_contour_points,
     )
 
     if len(contour_pts) == 0:
@@ -327,7 +332,7 @@ def create_shape_model(
         # coarser levels).
         lvl_contrast = max(min_contrast / (2 ** lvl), 5.0)
         lvl_pts, lvl_ang_arr = _extract_contour_points(
-            lvl_mag, lvl_ang, lvl_contrast,
+            lvl_mag, lvl_ang, lvl_contrast, max_points=max_contour_points,
         )
         pyramid.append({
             "edges": lvl_mag,

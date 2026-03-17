@@ -104,6 +104,8 @@ class MetrologyDialog(tk.Toplevel):
         self._low_var = tk.IntVar(value=20)
         self._high_var = tk.IntVar(value=40)
         self._edge_count_var = tk.StringVar(value="--")
+        self._irls_max_iter_var = tk.IntVar(value=50)
+        self._irls_tol_var = tk.StringVar(value="1e-6")
 
         # Tab 2 - measurement
         self._meas_type_var = tk.StringVar(value="距離")
@@ -255,6 +257,32 @@ class MetrologyDialog(tk.Toplevel):
             textvariable=self._high_var,
             from_=1, to=255, increment=1, width=5,
             bg=_BG_MEDIUM, fg=_FG_WHITE, buttonbackground=_BG_MEDIUM,
+            insertbackground=_FG_WHITE, relief=tk.FLAT,
+        ).pack(side=tk.LEFT)
+
+        # Row 3 - IRLS parameters
+        row3 = tk.Frame(param_frame, bg=_BG)
+        row3.pack(fill=tk.X, pady=2)
+
+        tk.Label(
+            row3, text="IRLS 最大迭代:", bg=_BG, fg=_FG, font=("", 9),
+        ).pack(side=tk.LEFT, padx=(0, 2))
+        tk.Spinbox(
+            row3,
+            textvariable=self._irls_max_iter_var,
+            from_=1, to=500, increment=10, width=5,
+            bg=_BG_MEDIUM, fg=_FG_WHITE, buttonbackground=_BG_MEDIUM,
+            insertbackground=_FG_WHITE, relief=tk.FLAT,
+        ).pack(side=tk.LEFT, padx=(0, 16))
+
+        tk.Label(
+            row3, text="IRLS 容差:", bg=_BG, fg=_FG, font=("", 9),
+        ).pack(side=tk.LEFT, padx=(0, 2))
+        tk.Entry(
+            row3,
+            textvariable=self._irls_tol_var,
+            width=8,
+            bg=_BG_MEDIUM, fg=_FG_WHITE,
             insertbackground=_FG_WHITE, relief=tk.FLAT,
         ).pack(side=tk.LEFT)
 
@@ -861,13 +889,21 @@ class MetrologyDialog(tk.Toplevel):
             alpha = self._alpha_var.get()
             low = self._low_var.get()
             high = self._high_var.get()
+            irls_max_iter = self._irls_max_iter_var.get()
+            irls_tol = self._safe_float(self._irls_tol_var.get(), default=1e-6)
 
-            self._edges = edges_sub_pix(image, alpha=alpha, low=low, high=high)
+            self._edges = edges_sub_pix(
+                image, alpha=alpha, low=low, high=high,
+                max_iter=irls_max_iter, tolerance=irls_tol,
+            )
             count = len(self._edges)
             self._edge_count_var.set(str(count))
             self._set_status(f"偵測到 {count} 個子像素邊緣")
-            logger.info("Detected %d sub-pixel edges (alpha=%.1f, low=%d, high=%d)",
-                        count, alpha, low, high)
+            logger.info(
+                "Detected %d sub-pixel edges (alpha=%.1f, low=%d, high=%d, "
+                "irls_max_iter=%d, irls_tol=%.1e)",
+                count, alpha, low, high, irls_max_iter, irls_tol,
+            )
 
         except Exception as exc:
             logger.exception("Edge detection failed")
@@ -1103,20 +1139,26 @@ class MetrologyDialog(tk.Toplevel):
             algorithm = self._fit_algo_var.get()
             clip = self._safe_float(self._fit_clip_var.get())
 
+            irls_max_iter = self._irls_max_iter_var.get()
+            irls_tol = self._safe_float(self._irls_tol_var.get(), default=1e-6)
+
             if fit_type == "直線":
                 result = fit_line_contour_xld(
                     points, algorithm=algorithm,
                     clipping_factor=clip,
+                    max_iter=irls_max_iter, tolerance=irls_tol,
                 )
             elif fit_type == "圓":
                 result = fit_circle_contour_xld(
                     points, algorithm=algorithm,
                     clipping_factor=clip,
+                    max_iter=irls_max_iter, tolerance=irls_tol,
                 )
             elif fit_type == "橢圓":
                 result = fit_ellipse_contour_xld(
                     points, algorithm=algorithm,
                     clipping_factor=clip,
+                    max_iter=irls_max_iter, tolerance=irls_tol,
                 )
             else:
                 raise ValueError(f"未知擬合類型: {fit_type}")

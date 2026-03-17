@@ -504,3 +504,45 @@ class DialogMixin:
             add_pipeline_step=self._add_pipeline_step,
             set_status=self.set_status,
         )
+
+    # ==================================================================
+    # Pipeline Model (save / load / manage)
+    # ==================================================================
+
+    def _cmd_save_pipeline_model(self: "HalconApp") -> None:
+        """Save current pipeline + flow as a .cpmodel file."""
+        from dl_anomaly.gui.pipeline_model_dialog import save_pipeline_model_dialog
+        save_pipeline_model_dialog(
+            self,
+            pipeline_panel=self._pipeline_panel,
+            set_status=self.set_status,
+        )
+
+    def _cmd_load_pipeline_model(self: "HalconApp") -> None:
+        """Load and execute a .cpmodel pipeline model."""
+        from dl_anomaly.gui.pipeline_model_dialog import load_pipeline_model_dialog
+        load_pipeline_model_dialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    def _open_pipeline_model_manager(self: "HalconApp") -> None:
+        """Open the pipeline model registry manager dialog."""
+        from dl_anomaly.gui.pipeline_model_dialog import PipelineModelManagerDialog
+        PipelineModelManagerDialog(
+            self,
+            get_current_image=self._get_current_image,
+            add_pipeline_step=self._add_pipeline_step,
+            set_status=self.set_status,
+        )
+
+    # ==================================================================
+    # Auto-Tune
+    # ==================================================================
+
+    def _open_auto_tune(self: "HalconApp") -> None:
+        """Open automatic threshold calibration dialog."""
+        from dl_anomaly.gui.auto_tune_dialog import AutoTuneDialog
+        AutoTuneDialog(self, set_status=self.set_status)

@@ -661,6 +661,8 @@ def fit_line_contour_xld(
     algorithm: str = "tukey",
     max_num_points: int = -1,
     clipping_factor: float = 2.0,
+    irls_max_iter: int = IRLS_MAX_ITER,
+    irls_tol: float = IRLS_TOL,
 ) -> FitResult:
     """Fit a line to a set of 2-D contour points.
 
@@ -676,6 +678,12 @@ def fit_line_contour_xld(
         Maximum points to use (``-1`` = all).
     clipping_factor : float
         Outlier clipping factor for robust methods.
+    irls_max_iter : int
+        Maximum number of IRLS iterations for robust methods.
+        Defaults to :data:`IRLS_MAX_ITER`.
+    irls_tol : float
+        Convergence tolerance for IRLS iterations.
+        Defaults to :data:`IRLS_TOL`.
 
     Returns
     -------
@@ -710,7 +718,7 @@ def fit_line_contour_xld(
     cols = pts[:, 1]
     weights = np.ones(n, dtype=np.float64)
 
-    max_iter = 1 if algorithm == "regression" else IRLS_MAX_ITER
+    max_iter = 1 if algorithm == "regression" else irls_max_iter
 
     nx = ny = 0.0
     dir_r = dir_c = 0.0
@@ -746,7 +754,7 @@ def fit_line_contour_xld(
             # Check convergence
             if iteration > 0:
                 new_rms = float(np.sqrt(np.mean(residuals ** 2)))
-                if iteration > 1 and abs(new_rms - _prev_rms) < IRLS_TOL:
+                if iteration > 1 and abs(new_rms - _prev_rms) < irls_tol:
                     break
                 _prev_rms = new_rms
             else:
@@ -804,6 +812,8 @@ def fit_circle_contour_xld(
     algorithm: str = "algebraic",
     max_num_points: int = -1,
     clipping_factor: float = 2.0,
+    irls_max_iter: int = IRLS_MAX_ITER,
+    irls_tol: float = IRLS_TOL,
 ) -> FitResult:
     """Fit a circle to a set of 2-D contour points.
 
@@ -812,12 +822,20 @@ def fit_circle_contour_xld(
     points : sequence of (row, col)
         Input contour points.
     algorithm : str
-        ``"algebraic"`` (Kasa method) or ``"geometric"`` (iterative
-        refinement with robust weighting).
+        ``"algebraic"`` (Kasa method), ``"geometric"`` (iterative
+        refinement with Tukey weighting), ``"huber"`` (iterative
+        refinement with Huber weighting), or ``"tukey"`` (alias for
+        ``"geometric"``).
     max_num_points : int
         Maximum points to use (``-1`` = all).
     clipping_factor : float
-        Outlier clipping factor for the geometric method.
+        Outlier clipping factor for robust methods.
+    irls_max_iter : int
+        Maximum number of IRLS iterations for robust methods.
+        Defaults to :data:`IRLS_MAX_ITER`.
+    irls_tol : float
+        Convergence tolerance for IRLS iterations.
+        Defaults to :data:`IRLS_TOL`.
 
     Returns
     -------
@@ -852,13 +870,22 @@ def fit_circle_contour_xld(
     r_sq = cc ** 2 + cr ** 2 - result[2]
     radius = math.sqrt(max(float(r_sq), 0.0))
 
-    if algorithm == "geometric":
+    # Map algorithm aliases to the robust weight function name
+    _robust_algo_map = {
+        "geometric": "tukey",
+        "tukey": "tukey",
+        "huber": "huber",
+    }
+
+    if algorithm in _robust_algo_map:
+        robust_name = _robust_algo_map[algorithm]
+        _prev_rms = 0.0
         # Iterative refinement with robust weighting
-        for _ in range(30):
+        for iteration in range(irls_max_iter):
             dist = np.sqrt((cols - cc) ** 2 + (rows - cr) ** 2)
             residuals = dist - radius
 
-            weights = _robust_weights(residuals, "tukey", clipping_factor)
+            weights = _robust_weights(residuals, robust_name, clipping_factor)
             weights = np.maximum(weights, 1e-12)
             sw = np.sum(weights)
 
@@ -867,9 +894,20 @@ def fit_circle_contour_xld(
             dist = np.sqrt((cols - cc) ** 2 + (rows - cr) ** 2)
             radius = float(np.sum(weights * dist) / sw)
 
+            # Check convergence
+            new_rms = float(np.sqrt(np.mean(residuals ** 2)))
+            if iteration > 0 and abs(new_rms - _prev_rms) < irls_tol:
+                break
+            _prev_rms = new_rms
+
         points_used = int(np.sum(weights > 1e-6))
-    else:
+    elif algorithm == "algebraic":
         points_used = n
+    else:
+        raise ValueError(
+            f"fit_circle_contour_xld: unknown algorithm '{algorithm}', "
+            f"expected 'algebraic', 'geometric', 'huber', or 'tukey'"
+        )
 
     # RMS error
     dists = np.sqrt((cols - cc) ** 2 + (rows - cr) ** 2)

@@ -678,7 +678,7 @@ class MVPToolsDialog(tk.Toplevel):
         path = filedialog.askopenfilename(
             title="選擇模型檔案",
             filetypes=[("PyTorch Model", "*.pth *.pt"), ("ONNX", "*.onnx"),
-                       ("所有檔案", "*.*")],
+                       ("所有檔案", "*")],
             parent=self,
         )
         if path:
@@ -936,7 +936,7 @@ class MVPToolsDialog(tk.Toplevel):
         path = filedialog.asksaveasfilename(
             title="儲存檢測配方",
             defaultextension=".json",
-            filetypes=[("JSON", "*.json"), ("所有檔案", "*.*")],
+            filetypes=[("JSON", "*.json"), ("所有檔案", "*")],
             parent=self,
         )
         if not path:
@@ -954,7 +954,7 @@ class MVPToolsDialog(tk.Toplevel):
     def _on_load_recipe(self) -> None:
         path = filedialog.askopenfilename(
             title="載入檢測配方",
-            filetypes=[("JSON", "*.json"), ("所有檔案", "*.*")],
+            filetypes=[("JSON", "*.json"), ("所有檔案", "*")],
             parent=self,
         )
         if not path:
@@ -1108,7 +1108,7 @@ class MVPToolsDialog(tk.Toplevel):
     def _on_browse_logo(self) -> None:
         path = filedialog.askopenfilename(
             title="選擇 Logo 圖片",
-            filetypes=[("圖片檔案", "*.png *.jpg *.jpeg *.bmp"), ("所有檔案", "*.*")],
+            filetypes=[("圖片檔案", "*.png *.jpg *.jpeg *.bmp"), ("所有檔案", "*")],
             parent=self,
         )
         if path:
@@ -1195,7 +1195,7 @@ class MVPToolsDialog(tk.Toplevel):
         output_path = filedialog.asksaveasfilename(
             title="匯出 PDF 報表",
             defaultextension=".pdf",
-            filetypes=[("PDF 檔案", "*.pdf"), ("所有檔案", "*.*")],
+            filetypes=[("PDF 檔案", "*.pdf"), ("所有檔案", "*")],
             parent=self,
         )
         if not output_path:

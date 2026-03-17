@@ -868,7 +868,7 @@ class AdvancedModelsDialog(tk.Toplevel):
     def _load_patchcore_model(self) -> None:
         path = filedialog.askopenfilename(
             parent=self, title="載入 PatchCore 模型",
-            filetypes=[("NPZ 檔案", "*.npz"), ("所有檔案", "*.*")],
+            filetypes=[("NPZ 檔案", "*.npz"), ("所有檔案", "*")],
         )
         if not path:
             return
@@ -1221,7 +1221,7 @@ class AdvancedModelsDialog(tk.Toplevel):
     def _load_onnx_model(self) -> None:
         path = filedialog.askopenfilename(
             parent=self, title="載入 ONNX 模型",
-            filetypes=[("ONNX 模型", "*.onnx"), ("所有檔案", "*.*")],
+            filetypes=[("ONNX 模型", "*.onnx"), ("所有檔案", "*")],
         )
         if not path:
             return

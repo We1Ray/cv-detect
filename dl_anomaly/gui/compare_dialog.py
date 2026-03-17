@@ -326,7 +326,7 @@ class CompareDialog(tk.Toplevel):
     def _import_rules(self) -> None:
         path = filedialog.askopenfilename(
             parent=self, title="匯入規則",
-            filetypes=[("JSON", "*.json"), ("所有檔案", "*.*")],
+            filetypes=[("JSON", "*.json"), ("所有檔案", "*")],
         )
         if not path:
             return

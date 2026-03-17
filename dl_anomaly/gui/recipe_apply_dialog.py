@@ -116,7 +116,7 @@ class RecipeApplyDialog(tk.Toplevel):
     def _browse_recipe(self) -> None:
         path = filedialog.askopenfilename(
             parent=self, title="選擇流程檔案",
-            filetypes=[("JSON", "*.json"), ("所有檔案", "*.*")],
+            filetypes=[("JSON", "*.json"), ("所有檔案", "*")],
         )
         if path:
             self._recipe_path = path
@@ -127,7 +127,7 @@ class RecipeApplyDialog(tk.Toplevel):
             parent=self, title="選擇圖片（可複選）",
             filetypes=[
                 ("圖片", "*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff"),
-                ("所有檔案", "*.*"),
+                ("所有檔案", "*"),
             ],
         )
         if paths:

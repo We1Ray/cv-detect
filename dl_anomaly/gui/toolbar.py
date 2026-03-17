@@ -10,6 +10,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Dict, Optional
 
+from dl_anomaly.gui.platform_keys import display, display_shift
+
 
 class Toolbar(ttk.Frame):
     """Horizontal toolbar with grouped action buttons.
@@ -45,14 +47,16 @@ class Toolbar(ttk.Frame):
         )
 
         # ---- File group ----
-        self._add_button("\U0001F4C2", "open", "\u958b\u555f\u5716\u7247 (Ctrl+O)")  # Open
-        self._add_button("\U0001F4BE", "save", "\u5132\u5b58 (Ctrl+S)")  # Save
+        self._add_group_label("\u6a94\u6848")
+        self._add_button("\U0001F4C2", "open", f"\u958b\u555f\u5716\u7247 ({display('O')})")  # Open
+        self._add_button("\U0001F4BE", "save", f"\u5132\u5b58 ({display('S')})")  # Save
         self._add_sep()
-        self._add_button("\u21A9", "undo", "\u5fa9\u539f (Ctrl+Z)")  # Undo
-        self._add_button("\u21AA", "redo", "\u91cd\u505a (Ctrl+Y)")  # Redo
+        self._add_button("\u21A9", "undo", f"\u5fa9\u539f ({display('Z')})")  # Undo
+        self._add_button("\u21AA", "redo", f"\u91cd\u505a ({display('Y')})")  # Redo
         self._add_sep()
 
         # ---- View group ----
+        self._add_group_label("\u6aa2\u8996")
         self._add_button("\u229E", "fit", "\u7e2e\u653e\u81f3\u7a97\u53e3 (Space)")  # Fit
         self._add_button("\U0001F50D+", "zoom_in", "\u653e\u5927 (+)")  # Zoom+
         self._add_button("\U0001F50D-", "zoom_out", "\u7e2e\u5c0f (-)")  # Zoom-
@@ -60,6 +64,7 @@ class Toolbar(ttk.Frame):
         self._add_sep()
 
         # ---- Model group ----
+        self._add_group_label("\u6a21\u578b")
         self._add_button("\U0001F3AF", "train", "\u8a13\u7df4\u6a21\u578b (F6)")  # Train
         self._add_button("\U0001F4E6", "load_model", "\u8f09\u5165\u6a21\u578b")  # Load Model
         self._add_button("\U0001F50D", "inspect", "\u6aa2\u6e2c\u5716\u7247 (F5)")  # Inspect
@@ -67,21 +72,36 @@ class Toolbar(ttk.Frame):
         self._add_sep()
 
         # ---- HALCON tools ----
-        self._add_toggle("\u25C8", "toggle_pixel_inspector", "\u50cf\u7d20\u6aa2\u67e5\u5668 (Ctrl+I)")  # Pixel Inspector
-        self._add_button("\u25A7", "threshold", "\u95be\u503c\u5206\u5272 (Ctrl+T)")  # Threshold
+        self._add_group_label("\u5de5\u5177")
+        self._add_toggle("\u25C8", "toggle_pixel_inspector", f"\u50cf\u7d20\u6aa2\u67e5\u5668 ({display('I')})")  # Pixel Inspector
+        self._add_button("\u25A7", "threshold", f"\u95be\u503c\u5206\u5272 ({display('T')})")  # Threshold
         self._add_button("\u25A9", "blob_analysis", "Blob \u5206\u6790")  # Blob
         self._add_toggle("\u2630", "toggle_script_editor", "\u8173\u672c\u7de8\u8f2f\u5668 (F8)")  # Script Editor
         self._add_button("\u2194", "compare", "\u5716\u7247\u6bd4\u5c0d")  # Compare
         self._add_sep()
 
         # ---- Measurement tools ----
-        self._add_toggle("\u2316", "tool_pixel_inspect", "\u50cf\u7d20\u6aa2\u67e5\u5de5\u5177 (Ctrl+Shift+I)")
-        self._add_toggle("\u25AD", "tool_region_select", "\u5340\u57df\u9078\u53d6\u5de5\u5177 (Ctrl+Shift+R)")
+        self._add_group_label("\u91cf\u6e2c")
+        self._add_toggle("\u2316", "tool_pixel_inspect", f"\u50cf\u7d20\u6aa2\u67e5\u5de5\u5177 ({display_shift('I')})")
+        self._add_toggle("\u25AD", "tool_region_select", f"\u5340\u57df\u9078\u53d6\u5de5\u5177 ({display_shift('R')})")
         self._add_sep()
 
         # ---- Display toggles ----
+        self._add_group_label("\u986f\u793a")
         self._add_toggle("\u25A6", "grid", "\u7db2\u683c")  # Grid
         self._add_toggle("+", "crosshair", "\u5341\u5b57\u7dda")  # Crosshair
+
+    def _add_group_label(self, text: str) -> None:
+        """Add a small group label above the next buttons."""
+        lbl = tk.Label(
+            self,
+            text=text,
+            bg="#2b2b2b",
+            fg="#777777",
+            font=("Segoe UI", 7),
+            anchor=tk.S,
+        )
+        lbl.pack(side=tk.LEFT, padx=(4, 0), pady=(0, 0))
 
     def _add_button(self, symbol: str, action: str, tooltip: str = "") -> None:
         cb = self._callbacks.get(action, lambda: None)
@@ -145,29 +165,43 @@ class Toolbar(ttk.Frame):
     @staticmethod
     def _add_tooltip(widget: tk.Widget, text: str) -> None:
         tip_window = [None]
+        hide_id = [None]
 
         def show(event: tk.Event) -> None:
             if tip_window[0] is not None:
                 return
-            tw = tk.Toplevel(widget)
-            tw.wm_overrideredirect(True)
-            tw.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
-            label = tk.Label(
-                tw,
-                text=text,
-                justify=tk.LEFT,
-                background="#ffffe0",
-                foreground="#333333",
-                relief=tk.SOLID,
-                borderwidth=1,
-                font=("Segoe UI", 9),
-                padx=4,
-                pady=2,
-            )
-            label.pack()
-            tip_window[0] = tw
+            # Delay showing tooltip by 400ms
+            def _show():
+                if tip_window[0] is not None:
+                    return
+                tw = tk.Toplevel(widget)
+                tw.wm_overrideredirect(True)
+                tw.wm_geometry(f"+{event.x_root + 12}+{event.y_root + 20}")
+                # Prevent the tooltip from receiving focus on macOS
+                tw.wm_attributes("-topmost", True)
+
+                frame = tk.Frame(tw, bg="#1e1e1e", highlightbackground="#555555",
+                               highlightthickness=1, padx=1, pady=1)
+                frame.pack()
+
+                label = tk.Label(
+                    frame,
+                    text=text,
+                    justify=tk.LEFT,
+                    background="#1e1e1e",
+                    foreground="#cccccc",
+                    font=("Segoe UI", 9),
+                    padx=8,
+                    pady=4,
+                )
+                label.pack()
+                tip_window[0] = tw
+            hide_id[0] = widget.after(400, _show)
 
         def hide(_event: tk.Event) -> None:
+            if hide_id[0] is not None:
+                widget.after_cancel(hide_id[0])
+                hide_id[0] = None
             if tip_window[0] is not None:
                 tip_window[0].destroy()
                 tip_window[0] = None

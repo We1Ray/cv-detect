@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from typing import List, Optional, Tuple
 
+import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -30,9 +31,10 @@ class AnomalyScorer:
         gaussian smoothing are computed on the GPU.
     """
 
-    def __init__(self, device: str = "cpu") -> None:
+    def __init__(self, device: str = "cpu", gaussian_sigma: float = 4.0) -> None:
         self.threshold: Optional[float] = None
         self.device = torch.device(device)
+        self.gaussian_sigma = gaussian_sigma
 
         # Cached gaussian kernels  (key: (window_size, channels))
         self._ssim_kernel_cache: dict[Tuple[int, int], torch.Tensor] = {}
@@ -169,20 +171,82 @@ class AnomalyScorer:
     # Threshold
     # ------------------------------------------------------------------
 
-    def fit_threshold(self, training_errors: List[float], percentile: float = 95.0) -> float:
-        """Fit the anomaly threshold as the given percentile of *training_errors*.
+    def fit_threshold(
+        self,
+        training_errors: List[float],
+        percentile: float = 95.0,
+        threshold_method: str = "percentile",
+        fixed_value: Optional[float] = None,
+        error_map_for_otsu: Optional[np.ndarray] = None,
+    ) -> float:
+        """Fit the anomaly threshold and store it internally.
 
-        Returns the computed threshold and stores it internally.
+        Parameters
+        ----------
+        training_errors:
+            List of image-level error scores from the training set.
+        percentile:
+            Percentile value used when *threshold_method* is ``"percentile"``.
+        threshold_method:
+            ``"percentile"`` (default) -- compute the given percentile of
+            *training_errors*.
+            ``"fixed"`` -- use *fixed_value* directly.
+            ``"otsu"`` -- apply Otsu's method on *error_map_for_otsu* (a
+            representative error map, e.g. the map with the highest score)
+            to determine the threshold.
+        fixed_value:
+            The threshold value to use when *threshold_method* is ``"fixed"``.
+        error_map_for_otsu:
+            A ``(H, W)`` float32 error map used when *threshold_method* is
+            ``"otsu"``.  Typically the error map of the training image with
+            the highest anomaly score.
+
+        Returns
+        -------
+        float
+            The computed threshold.
         """
-        if not training_errors:
-            raise ValueError("Cannot fit threshold with an empty error list.")
-        self.threshold = float(np.percentile(training_errors, percentile))
-        logger.info(
-            "Anomaly threshold set to %.6f (percentile=%.1f, n=%d)",
-            self.threshold,
-            percentile,
-            len(training_errors),
-        )
+        if threshold_method == "percentile":
+            if not training_errors:
+                raise ValueError("Cannot fit threshold with an empty error list.")
+            self.threshold = float(np.percentile(training_errors, percentile))
+            logger.info(
+                "Anomaly threshold set to %.6f (percentile=%.1f, n=%d)",
+                self.threshold,
+                percentile,
+                len(training_errors),
+            )
+        elif threshold_method == "fixed":
+            if fixed_value is None:
+                raise ValueError(
+                    "fixed_value must be provided when threshold_method='fixed'."
+                )
+            self.threshold = float(fixed_value)
+            logger.info("Anomaly threshold set to %.6f (fixed)", self.threshold)
+        elif threshold_method == "otsu":
+            if error_map_for_otsu is None:
+                raise ValueError(
+                    "error_map_for_otsu must be provided when "
+                    "threshold_method='otsu'."
+                )
+            # Normalise the error map to uint8 for Otsu
+            emap = error_map_for_otsu.astype(np.float32)
+            vmin, vmax = float(emap.min()), float(emap.max())
+            if vmax - vmin < 1e-8:
+                self.threshold = float(vmax)
+            else:
+                normed = ((emap - vmin) / (vmax - vmin) * 255).astype(np.uint8)
+                otsu_val, _ = cv2.threshold(
+                    normed, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+                )
+                # Map the uint8 Otsu threshold back to the original value range
+                self.threshold = float(vmin + (otsu_val / 255.0) * (vmax - vmin))
+            logger.info("Anomaly threshold set to %.6f (otsu)", self.threshold)
+        else:
+            raise ValueError(
+                f"Unknown threshold_method '{threshold_method}'. "
+                f"Choose from 'percentile', 'fixed', 'otsu'."
+            )
         return self.threshold
 
     def classify(self, score: float) -> bool:

@@ -222,6 +222,14 @@ class LocateStep(FlowStep):
         Maximum scale factor (default ``1.0``).
     roi_padding : int
         Extra pixels around each match for downstream ROIs (default ``10``).
+    min_contrast : int
+        Minimum edge contrast for shape model creation (default ``30``).
+    angle_step : float
+        Angle search step in degrees (default ``1.0``).
+    max_contour_points : int
+        Maximum contour points for the shape model (default ``2000``).
+    greediness : float
+        Search greediness ``0.0``--``1.0`` (default ``0.9``).
 
     Output data
     -----------
@@ -279,9 +287,14 @@ class LocateStep(FlowStep):
         scale_min = float(self.config.get("scale_min", 1.0))
         scale_max = float(self.config.get("scale_max", 1.0))
         roi_padding = int(self.config.get("roi_padding", 10))
+        min_contrast = int(self.config.get("min_contrast", 30))
+        angle_step_deg = float(self.config.get("angle_step", 1.0))
+        max_contour_points = int(self.config.get("max_contour_points", 2000))
+        greediness = float(self.config.get("greediness", 0.9))
 
         angle_start = math.radians(angle_start_deg)
         angle_extent = math.radians(angle_extent_deg)
+        angle_step = math.radians(angle_step_deg)
 
         template = cv2.imread(str(template_path_obj), cv2.IMREAD_UNCHANGED)
         if template is None:
@@ -297,16 +310,21 @@ class LocateStep(FlowStep):
         try:
             model = create_shape_model(
                 template,
+                num_levels=int(self.config.get("num_levels", 4)),
                 angle_start=angle_start,
                 angle_extent=angle_extent,
                 scale_min=scale_min,
                 scale_max=scale_max,
+                min_contrast=min_contrast,
+                angle_step=angle_step,
+                max_contour_points=max_contour_points,
             )
             matches = find_shape_model(
                 image,
                 model,
                 min_score=min_score,
                 num_matches=num_matches,
+                greediness=greediness,
             )
         except Exception as exc:
             logger.exception("LocateStep failed during shape matching.")
@@ -374,14 +392,17 @@ class LocateStep(FlowStep):
 
 
 class DetectStep(FlowStep):
-    """Anomaly detection step using autoencoder or PatchCore.
+    """Anomaly detection step supporting multiple detection methods.
 
     Config keys
     -----------
     method : str
-        ``"autoencoder"`` or ``"patchcore"`` (default ``"autoencoder"``).
+        ``"autoencoder"``, ``"patchcore"``, ``"difference"``, ``"fft"``,
+        ``"color"``, ``"blob"``, ``"teacher_student"``, ``"normalizing_flow"``,
+        or ``"unet"`` (default ``"autoencoder"``).
     checkpoint_path : str
-        Path to the trained model checkpoint.
+        Path to the trained model checkpoint (required for DL methods:
+        autoencoder, patchcore, teacher_student, normalizing_flow, unet).
     threshold : float
         Anomaly score threshold (default ``0.5``).
     roi_from_previous : bool
@@ -389,6 +410,72 @@ class DetectStep(FlowStep):
         (default ``False``).
     min_defect_area : int
         Minimum contiguous defect area in pixels (default ``20``).
+
+    Method-specific config keys
+    ---------------------------
+    **difference** method:
+        reference_image_path : str
+            Path to the reference (golden) image.
+        registration_method : str
+            ``"ecc"``, ``"orb"``, ``"phase_correlation"``, or ``"none"``
+            (default ``"ecc"``).
+        blur_sigma : float
+            Gaussian blur sigma before differencing (default ``2.0``).
+        morph_kernel_size : int
+            Morphological kernel size for mask cleanup (default ``5``).
+
+    **fft** method:
+        filter_type : str
+            ``"notch"``, ``"bandpass"``, or ``"gaussian_hp"``
+            (default ``"gaussian_hp"``).
+        cutoff_low : float
+            Low-frequency cutoff (default ``30``).
+        cutoff_high : float
+            High-frequency cutoff (default ``100``).
+        threshold_sigma : float
+            Number of standard deviations above mean for thresholding
+            (default ``3.0``).
+
+    **color** method:
+        reference_color_lab : list
+            Reference colour as ``[L, a, b]``.
+        delta_e_method : str
+            ``"CIE76"`` or ``"CIEDE2000"`` (default ``"CIE76"``).
+        delta_e_tolerance : float
+            Maximum acceptable Delta-E value (default ``10.0``).
+
+    **blob** method:
+        blob_threshold_method : str
+            ``"otsu"``, ``"fixed"``, or ``"adaptive"``
+            (default ``"otsu"``).
+        blob_threshold_value : int
+            Fixed threshold value when method is ``"fixed"``
+            (default ``128``).
+        min_area : int
+            Minimum blob area in pixels (default ``min_defect_area``).
+        max_area : int
+            Maximum blob area in pixels (default ``999999``).
+        min_circularity : float
+            Minimum circularity filter ``0.0``--``1.0``
+            (default ``0.0``, disabled).
+
+    **teacher_student** method:
+        checkpoint_path : str
+            Path to the teacher-student model checkpoint.
+        threshold : float
+            Anomaly score threshold.
+
+    **normalizing_flow** method:
+        checkpoint_path : str
+            Path to the normalizing-flow model checkpoint.
+        threshold : float
+            Anomaly score threshold.
+
+    **unet** method:
+        checkpoint_path : str
+            Path to the U-Net segmentation model checkpoint.
+        threshold : float
+            Anomaly score threshold.
 
     Output data
     -----------
@@ -416,32 +503,40 @@ class DetectStep(FlowStep):
     ) -> StepResult:
         t0 = time.perf_counter()
 
-        checkpoint_path = self.config.get("checkpoint_path", "")
-        if not checkpoint_path:
-            return StepResult(
-                step_name=self.name,
-                step_type=self.step_type,
-                success=False,
-                data={},
-                elapsed_ms=_elapsed_ms(t0),
-                message="checkpoint_path not configured.",
-            )
-
-        cp = Path(checkpoint_path)
-        if not cp.exists():
-            return StepResult(
-                step_name=self.name,
-                step_type=self.step_type,
-                success=False,
-                data={},
-                elapsed_ms=_elapsed_ms(t0),
-                message=f"Checkpoint not found: {checkpoint_path}",
-            )
-
         method = self.config.get("method", "autoencoder")
         threshold = float(self.config.get("threshold", 0.5))
         roi_from_previous = bool(self.config.get("roi_from_previous", False))
         min_defect_area = int(self.config.get("min_defect_area", 20))
+
+        # Methods that require a trained checkpoint file.
+        _DL_METHODS = {
+            "autoencoder", "patchcore", "teacher_student",
+            "normalizing_flow", "unet",
+        }
+
+        checkpoint_path = self.config.get("checkpoint_path", "")
+        if method in _DL_METHODS:
+            if not checkpoint_path:
+                return StepResult(
+                    step_name=self.name,
+                    step_type=self.step_type,
+                    success=False,
+                    data={},
+                    elapsed_ms=_elapsed_ms(t0),
+                    message="checkpoint_path not configured.",
+                )
+            cp = Path(checkpoint_path)
+            if not cp.exists():
+                return StepResult(
+                    step_name=self.name,
+                    step_type=self.step_type,
+                    success=False,
+                    data={},
+                    elapsed_ms=_elapsed_ms(t0),
+                    message=f"Checkpoint not found: {checkpoint_path}",
+                )
+        else:
+            cp = None
 
         # Determine ROIs from locate context.
         rois: List[Tuple[int, int, int, int]] = []
@@ -452,6 +547,34 @@ class DetectStep(FlowStep):
             if method == "patchcore":
                 result_data = self._run_patchcore(
                     image, cp, threshold, rois, min_defect_area
+                )
+            elif method == "teacher_student":
+                result_data = self._run_teacher_student(
+                    image, cp, threshold, rois, min_defect_area
+                )
+            elif method == "normalizing_flow":
+                result_data = self._run_normalizing_flow(
+                    image, cp, threshold, rois, min_defect_area
+                )
+            elif method == "unet":
+                result_data = self._run_unet(
+                    image, cp, threshold, rois, min_defect_area
+                )
+            elif method == "difference":
+                result_data = self._run_difference(
+                    image, self.config, rois, min_defect_area
+                )
+            elif method == "fft":
+                result_data = self._run_fft(
+                    image, self.config, rois, min_defect_area
+                )
+            elif method == "color":
+                result_data = self._run_color(
+                    image, self.config, rois, min_defect_area
+                )
+            elif method == "blob":
+                result_data = self._run_blob(
+                    image, self.config, min_defect_area
                 )
             else:
                 result_data = self._run_autoencoder(
@@ -468,8 +591,12 @@ class DetectStep(FlowStep):
                 message=f"Detection error: {exc}",
             )
 
-        is_defective = result_data["anomaly_score"] > threshold
-        result_data["is_defective"] = is_defective
+        # Some non-DL methods may already set is_defective; otherwise derive.
+        if "is_defective" not in result_data:
+            is_defective = result_data["anomaly_score"] > threshold
+            result_data["is_defective"] = is_defective
+        else:
+            is_defective = result_data["is_defective"]
         result_data["threshold"] = threshold
 
         # Pop visualisation image out of data before returning.
@@ -653,6 +780,386 @@ class DetectStep(FlowStep):
             "defect_mask": combined_mask,
             "defect_regions": all_regions,
             "roi_scores": roi_scores,
+        }
+
+    # ------------------------------------------------------------------ #
+    #  Teacher-Student detection runner                                     #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_teacher_student(
+        image: np.ndarray,
+        checkpoint_path: Path,
+        threshold: float,
+        rois: List[Tuple[int, int, int, int]],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run teacher-student knowledge-distillation anomaly detection."""
+        from shared.core.teacher_student import TeacherStudentInference, load_model
+
+        model = load_model(checkpoint_path)
+        inference = TeacherStudentInference(model)
+
+        if rois:
+            return DetectStep._run_on_rois(
+                image,
+                rois,
+                threshold,
+                min_defect_area,
+                scorer_fn=lambda img: inference.score_image(img),
+            )
+
+        score, error_map = inference.score_image(image)
+        defect_mask = (
+            (error_map > threshold * error_map.max()).astype(np.uint8) * 255
+            if error_map.max() > 0
+            else np.zeros_like(error_map, dtype=np.uint8)
+        )
+        defect_regions = _extract_defect_regions(defect_mask, min_defect_area)
+        return {
+            "anomaly_score": float(score),
+            "defect_mask": defect_mask,
+            "defect_regions": defect_regions,
+            "error_map": error_map,
+            "roi_scores": [],
+        }
+
+    # ------------------------------------------------------------------ #
+    #  Normalizing-Flow detection runner                                    #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_normalizing_flow(
+        image: np.ndarray,
+        checkpoint_path: Path,
+        threshold: float,
+        rois: List[Tuple[int, int, int, int]],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run normalizing-flow-based anomaly detection."""
+        from shared.core.normalizing_flow import NormFlowInference, load_model
+
+        model = load_model(checkpoint_path)
+        inference = NormFlowInference(model)
+
+        if rois:
+            return DetectStep._run_on_rois(
+                image,
+                rois,
+                threshold,
+                min_defect_area,
+                scorer_fn=lambda img: inference.score_image(img),
+            )
+
+        score, error_map = inference.score_image(image)
+        defect_mask = (
+            (error_map > threshold * error_map.max()).astype(np.uint8) * 255
+            if error_map.max() > 0
+            else np.zeros_like(error_map, dtype=np.uint8)
+        )
+        defect_regions = _extract_defect_regions(defect_mask, min_defect_area)
+        return {
+            "anomaly_score": float(score),
+            "defect_mask": defect_mask,
+            "defect_regions": defect_regions,
+            "error_map": error_map,
+            "roi_scores": [],
+        }
+
+    # ------------------------------------------------------------------ #
+    #  U-Net segmentation detection runner                                  #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_unet(
+        image: np.ndarray,
+        checkpoint_path: Path,
+        threshold: float,
+        rois: List[Tuple[int, int, int, int]],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run U-Net segmentation-based defect detection."""
+        from shared.core.unet_segment import UNetInference, load_model
+
+        model = load_model(checkpoint_path)
+        inference = UNetInference(model)
+
+        if rois:
+            return DetectStep._run_on_rois(
+                image,
+                rois,
+                threshold,
+                min_defect_area,
+                scorer_fn=lambda img: (
+                    inference.score_image(img)
+                    if hasattr(inference, "score_image")
+                    else (
+                        inference.segment(img)[0],
+                        (inference.segment(img)[1] * 255).astype(np.uint8),
+                    )
+                ),
+            )
+
+        score, seg_mask = inference.segment(image)
+        defect_mask = ((seg_mask > threshold) * 255).astype(np.uint8)
+        defect_regions = _extract_defect_regions(defect_mask, min_defect_area)
+        return {
+            "anomaly_score": float(score),
+            "defect_mask": defect_mask,
+            "defect_regions": defect_regions,
+            "error_map": seg_mask.astype(np.float32),
+            "roi_scores": [],
+        }
+
+    # ------------------------------------------------------------------ #
+    #  Image-difference detection runner                                    #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_difference(
+        image: np.ndarray,
+        config: Dict[str, Any],
+        rois: List[Tuple[int, int, int, int]],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run reference-image difference detection."""
+        from shared.core.image_difference import ImageDifferencer
+
+        ref_path = config.get("reference_image_path", "")
+        if not ref_path:
+            raise ValueError(
+                "reference_image_path not configured for difference method."
+            )
+        ref_img = cv2.imread(str(ref_path))
+        if ref_img is None:
+            raise FileNotFoundError(
+                f"Cannot read reference image: {ref_path}"
+            )
+
+        differ = ImageDifferencer(
+            registration_method=config.get("registration_method", "ecc"),
+            threshold=float(config.get("threshold", 30.0)),
+            blur_sigma=float(config.get("blur_sigma", 2.0)),
+            morph_kernel_size=int(config.get("morph_kernel_size", 5)),
+            min_defect_area=min_defect_area,
+        )
+        differ.set_reference(ref_img)
+        result = differ.detect(image)
+        return {
+            "anomaly_score": result["anomaly_score"],
+            "defect_mask": result["defect_mask"],
+            "defect_regions": result["defect_regions"],
+            "error_map": result["error_map"],
+            "roi_scores": [],
+            "is_defective": result["is_defective"],
+            "alignment_quality": result.get("alignment_quality", 0.0),
+        }
+
+    # ------------------------------------------------------------------ #
+    #  FFT / frequency-domain detection runner                              #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_fft(
+        image: np.ndarray,
+        config: Dict[str, Any],
+        rois: List[Tuple[int, int, int, int]],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run FFT-based periodic-pattern anomaly detection."""
+        from shared.core.frequency import (
+            apply_frequency_filter,
+            create_bandpass_filter,
+            create_gaussian_filter,
+            remove_periodic_pattern,
+        )
+
+        gray = (
+            cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            if image.ndim == 3
+            else image
+        )
+        filter_type = config.get("filter_type", "gaussian_hp")
+        cutoff_low = float(config.get("cutoff_low", 30))
+        cutoff_high = float(config.get("cutoff_high", 100))
+        threshold_sigma = float(config.get("threshold_sigma", 3.0))
+
+        try:
+            filtered = remove_periodic_pattern(
+                gray,
+                min_distance=int(config.get("min_distance", 10)),
+                num_peaks=int(config.get("num_peaks", 5)),
+                radius=int(config.get("notch_radius", 8)),
+            )
+        except Exception:
+            # Build a frequency filter mask and apply it.
+            h, w = gray.shape[:2]
+            if filter_type == "bandpass":
+                fmask = create_bandpass_filter(
+                    (h, w), low_cutoff=cutoff_low, high_cutoff=cutoff_high
+                )
+            else:
+                # Default: Gaussian high-pass
+                fmask = 1.0 - create_gaussian_filter(
+                    (h, w), sigma=cutoff_low, filter_type="lowpass"
+                )
+            filtered = apply_frequency_filter(gray, fmask)
+
+        if filtered.shape == gray.shape:
+            diff = cv2.absdiff(gray, filtered)
+        else:
+            diff = np.abs(
+                gray.astype(np.float32) - filtered.astype(np.float32)
+            ).astype(np.uint8)
+
+        mean_val = float(np.mean(diff))
+        std_val = float(np.std(diff))
+        thresh_val = mean_val + threshold_sigma * std_val
+        _, defect_mask = cv2.threshold(
+            diff, thresh_val, 255, cv2.THRESH_BINARY
+        )
+        defect_mask = defect_mask.astype(np.uint8)
+
+        score = float(np.max(diff)) / 255.0 if np.max(diff) > 0 else 0.0
+        defect_regions = _extract_defect_regions(defect_mask, min_defect_area)
+        threshold = float(config.get("threshold", 0.5))
+        return {
+            "anomaly_score": score,
+            "is_defective": score > threshold,
+            "defect_mask": defect_mask,
+            "defect_regions": defect_regions,
+            "error_map": diff.astype(np.float32) / 255.0,
+            "roi_scores": [],
+        }
+
+    # ------------------------------------------------------------------ #
+    #  Colour Delta-E detection runner                                      #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_color(
+        image: np.ndarray,
+        config: Dict[str, Any],
+        rois: List[Tuple[int, int, int, int]],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run colour-space Delta-E anomaly detection."""
+        from shared.core.color_inspect import compute_delta_e_map
+
+        ref_lab = config.get("reference_color_lab")
+        if ref_lab is None:
+            raise ValueError(
+                "reference_color_lab not configured for color method."
+            )
+        ref_lab = tuple(ref_lab)
+        method = config.get("delta_e_method", "CIE76")
+        tolerance = float(config.get("delta_e_tolerance", 10.0))
+
+        if image.ndim == 2:
+            image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        else:
+            image_bgr = image
+
+        # compute_delta_e_map expects BGR uint8 image + (L, a, b) tuple
+        delta_e_map = compute_delta_e_map(
+            image_bgr, ref_lab, method=method
+        )
+
+        defect_mask = ((delta_e_map > tolerance) * 255).astype(np.uint8)
+        score = float(np.mean(delta_e_map)) / 100.0
+        defect_regions = _extract_defect_regions(defect_mask, min_defect_area)
+        threshold = float(config.get("threshold", 0.5))
+        return {
+            "anomaly_score": score,
+            "is_defective": score > threshold,
+            "defect_mask": defect_mask,
+            "defect_regions": defect_regions,
+            "error_map": delta_e_map.astype(np.float32),
+            "roi_scores": [],
+        }
+
+    # ------------------------------------------------------------------ #
+    #  Blob / connected-component detection runner                          #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _run_blob(
+        image: np.ndarray,
+        config: Dict[str, Any],
+        min_defect_area: int,
+    ) -> Dict[str, Any]:
+        """Run blob (connected-component) defect detection."""
+        gray = (
+            cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            if image.ndim == 3
+            else image
+        )
+        blob_method = config.get("blob_threshold_method", "otsu")
+        blob_thresh_val = int(config.get("blob_threshold_value", 128))
+        min_area = int(config.get("min_area", min_defect_area))
+        max_area = int(config.get("max_area", 999999))
+        min_circularity = float(config.get("min_circularity", 0.0))
+
+        if blob_method == "otsu":
+            _, binary = cv2.threshold(
+                gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+            )
+        elif blob_method == "adaptive":
+            binary = cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV, 21, 5,
+            )
+        else:
+            _, binary = cv2.threshold(
+                gray, blob_thresh_val, 255, cv2.THRESH_BINARY_INV
+            )
+
+        num_labels, labels, stats, centroids = (
+            cv2.connectedComponentsWithStats(binary, connectivity=8)
+        )
+        defect_regions: List[Dict[str, Any]] = []
+        defect_mask = np.zeros_like(gray, dtype=np.uint8)
+
+        for i in range(1, num_labels):
+            area = int(stats[i, cv2.CC_STAT_AREA])
+            if area < min_area or area > max_area:
+                continue
+            x = int(stats[i, cv2.CC_STAT_LEFT])
+            y = int(stats[i, cv2.CC_STAT_TOP])
+            w = int(stats[i, cv2.CC_STAT_WIDTH])
+            h = int(stats[i, cv2.CC_STAT_HEIGHT])
+
+            if min_circularity > 0:
+                perimeter_mask = (labels == i).astype(np.uint8)
+                contours, _ = cv2.findContours(
+                    perimeter_mask, cv2.RETR_EXTERNAL,
+                    cv2.CHAIN_APPROX_SIMPLE,
+                )
+                if contours:
+                    perimeter = cv2.arcLength(contours[0], True)
+                    circularity = (
+                        (4 * math.pi * area) / (perimeter * perimeter)
+                        if perimeter > 0
+                        else 0
+                    )
+                    if circularity < min_circularity:
+                        continue
+
+            defect_regions.append(
+                {"x": x, "y": y, "w": w, "h": h, "area": area}
+            )
+            defect_mask[labels == i] = 255
+
+        total_defect_area = int(np.sum(defect_mask > 0))
+        score = total_defect_area / max(gray.size, 1)
+        threshold = float(config.get("threshold", 0.5))
+        return {
+            "anomaly_score": score,
+            "is_defective": len(defect_regions) > 0,
+            "defect_mask": defect_mask,
+            "defect_regions": defect_regions,
+            "error_map": binary.astype(np.float32) / 255.0,
+            "roi_scores": [],
         }
 
 

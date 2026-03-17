@@ -406,6 +406,32 @@ class ShapeMatchingDialog(tk.Toplevel):
             highlightbackground=_BG_MEDIUM,
         ).pack(side=tk.LEFT, padx=4)
 
+        # Angle Step
+        row_astep = tk.Frame(param_frame, bg=_BG)
+        row_astep.pack(fill=tk.X, pady=2)
+        tk.Label(
+            row_astep, text="角度步長 (\u00b0):", bg=_BG, fg=_FG, font=("", 9),
+            width=14, anchor=tk.E,
+        ).pack(side=tk.LEFT)
+        self._angle_step_var = tk.DoubleVar(value=1.0)
+        ttk.Spinbox(
+            row_astep, from_=0.1, to=10.0, increment=0.1,
+            textvariable=self._angle_step_var, width=6, style="Dark.TSpinbox",
+        ).pack(side=tk.LEFT, padx=4)
+
+        # Max Contour Points
+        row_mcp = tk.Frame(param_frame, bg=_BG)
+        row_mcp.pack(fill=tk.X, pady=2)
+        tk.Label(
+            row_mcp, text="最大輪廓點:", bg=_BG, fg=_FG, font=("", 9),
+            width=14, anchor=tk.E,
+        ).pack(side=tk.LEFT)
+        self._max_contour_var = tk.IntVar(value=2000)
+        ttk.Spinbox(
+            row_mcp, from_=100, to=10000, increment=100,
+            textvariable=self._max_contour_var, width=6, style="Dark.TSpinbox",
+        ).pack(side=tk.LEFT, padx=4)
+
         # -- Create Model button --
         tk.Button(
             parent,
@@ -657,7 +683,7 @@ class ShapeMatchingDialog(tk.Toplevel):
             title="選擇模板圖片",
             filetypes=[
                 ("圖片檔案", "*.png *.jpg *.jpeg *.bmp *.tiff *.tif"),
-                ("所有檔案", "*.*"),
+                ("所有檔案", "*"),
             ],
             parent=self,
         )
@@ -754,6 +780,9 @@ class ShapeMatchingDialog(tk.Toplevel):
 
         angle_start_rad = math.radians(angle_start_deg)
         angle_extent_rad = math.radians(angle_extent_deg)
+        angle_step_deg = self._angle_step_var.get()
+        max_contour_points = self._max_contour_var.get()
+        angle_step_rad = math.radians(angle_step_deg)
 
         self._set_status("正在建立 Shape Model ...")
         self.update_idletasks()
@@ -767,6 +796,8 @@ class ShapeMatchingDialog(tk.Toplevel):
                 scale_min=scale_min,
                 scale_max=scale_max,
                 min_contrast=min_contrast,
+                angle_step=angle_step_rad,
+                max_contour_points=max_contour_points,
             )
         except Exception as exc:
             logger.exception("create_shape_model failed")

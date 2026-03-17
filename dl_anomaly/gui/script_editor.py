@@ -1693,7 +1693,7 @@ class ScriptEditor(ttk.Frame):
             filetypes=[
                 ("Python 腳本", "*.py"),
                 ("文字檔案", "*.txt"),
-                ("所有檔案", "*.*"),
+                ("所有檔案", "*"),
             ],
         )
         if not path:
@@ -1717,7 +1717,7 @@ class ScriptEditor(ttk.Frame):
             filetypes=[
                 ("Python 腳本", "*.py"),
                 ("文字檔案", "*.txt"),
-                ("所有檔案", "*.*"),
+                ("所有檔案", "*"),
             ],
         )
         if not path:

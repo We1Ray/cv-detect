@@ -1383,7 +1383,7 @@ class EngineeringToolsDialog(tk.Toplevel):
     def _browse_db_path(self) -> None:
         path = filedialog.askopenfilename(
             title="選擇資料庫", parent=self,
-            filetypes=[("SQLite", "*.db *.sqlite"), ("All", "*.*")],
+            filetypes=[("SQLite", "*.db *.sqlite"), ("All", "*")],
         )
         if path:
             self._spc_db_path_var.set(path)

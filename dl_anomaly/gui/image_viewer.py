@@ -13,6 +13,8 @@ Supports NumPy/PIL images with:
 
 from __future__ import annotations
 
+from dl_anomaly.gui.platform_keys import display
+
 import tkinter as tk
 from enum import Enum, auto
 from tkinter import ttk
@@ -61,6 +63,7 @@ class ImageViewer(ttk.Frame):
         zoom_callback: Optional[Callable] = None,
         click_callback: Optional[Callable] = None,
         region_callback: Optional[Callable] = None,
+        context_menu_callback: Optional[Callable] = None,
         show_loss_panel: bool = False,
         **kwargs,
     ) -> None:
@@ -69,6 +72,7 @@ class ImageViewer(ttk.Frame):
         self._zoom_callback = zoom_callback
         self._click_callback = click_callback
         self._region_callback = region_callback
+        self._context_menu_callback = context_menu_callback
 
         # Image state
         self._source_image: Optional[Image.Image] = None
@@ -127,6 +131,10 @@ class ImageViewer(ttk.Frame):
         )
         self._canvas.pack(fill=tk.BOTH, expand=True)
 
+        # Welcome overlay (shown when no image is loaded)
+        self._welcome_items: List[int] = []
+        self._draw_welcome()
+
         # Bindings
         self._canvas.bind("<MouseWheel>", self._on_mousewheel)
         self._canvas.bind("<Button-4>", self._on_mousewheel_linux_up)
@@ -135,11 +143,96 @@ class ImageViewer(ttk.Frame):
         self._canvas.bind("<B1-Motion>", self._on_button1_motion)
         self._canvas.bind("<ButtonRelease-1>", self._on_button1_release)
         self._canvas.bind("<Double-Button-1>", self._on_double_click)
-        self._canvas.bind("<ButtonPress-3>", self._on_sel_start)
-        self._canvas.bind("<B3-Motion>", self._on_sel_move)
-        self._canvas.bind("<ButtonRelease-3>", self._on_sel_end)
+        self._canvas.bind("<ButtonPress-2>", self._on_sel_start)
+        self._canvas.bind("<B2-Motion>", self._on_sel_move)
+        self._canvas.bind("<ButtonRelease-2>", self._on_sel_end)
+        self._canvas.bind("<ButtonPress-3>", self._on_right_click)
         self._canvas.bind("<Motion>", self._on_motion)
         self._canvas.bind("<Configure>", self._on_configure)
+
+    def _draw_welcome(self) -> None:
+        """Draw welcome overlay with quick-start hints."""
+        self._canvas.update_idletasks()
+        cw = max(self._canvas.winfo_width(), 600)
+        ch = max(self._canvas.winfo_height(), 400)
+        cx, cy = cw // 2, ch // 2
+
+        items: List[int] = []
+
+        # App title
+        items.append(self._canvas.create_text(
+            cx, cy - 80,
+            text="DL \u7570\u5e38\u5075\u6e2c\u5668",
+            font=("Segoe UI", 24, "bold"),
+            fill="#555555",
+            anchor=tk.CENTER,
+        ))
+
+        # Subtitle
+        items.append(self._canvas.create_text(
+            cx, cy - 45,
+            text="HALCON-Style Industrial Inspection",
+            font=("Segoe UI", 11),
+            fill="#444444",
+            anchor=tk.CENTER,
+        ))
+
+        # Divider line
+        items.append(self._canvas.create_line(
+            cx - 120, cy - 25, cx + 120, cy - 25,
+            fill="#333333", width=1,
+        ))
+
+        # Quick start hints
+        hints = [
+            (display("O"), "\u958b\u555f\u5716\u7247"),
+            (display("T"), "\u95be\u503c\u5206\u5272"),
+            ("F5", "\u57f7\u884c\u6aa2\u6e2c"),
+            ("F6", "\u8a13\u7df4\u6a21\u578b"),
+            (display("M"), "\u5f62\u72c0\u5339\u914d"),
+            ("Space", "\u7e2e\u653e\u81f3\u7a97\u53e3"),
+            ("\u53f3\u9375", "\u5feb\u901f\u9078\u55ae"),
+        ]
+
+        for i, (key, desc) in enumerate(hints):
+            y = cy + i * 28
+            # Key badge
+            items.append(self._canvas.create_rectangle(
+                cx - 110, y - 9, cx - 40, y + 9,
+                fill="#333333", outline="#444444", width=1,
+            ))
+            items.append(self._canvas.create_text(
+                cx - 75, y,
+                text=key,
+                font=("Consolas", 9, "bold"),
+                fill="#888888",
+                anchor=tk.CENTER,
+            ))
+            # Description
+            items.append(self._canvas.create_text(
+                cx - 30, y,
+                text=desc,
+                font=("Segoe UI", 10),
+                fill="#666666",
+                anchor=tk.W,
+            ))
+
+        # Bottom hint
+        items.append(self._canvas.create_text(
+            cx, cy + len(hints) * 28 + 20,
+            text="\u62d6\u653e\u5716\u7247\u5230\u6b64\u8655\u6216\u4f7f\u7528\u9078\u55ae\u958b\u555f\u6a94\u6848",
+            font=("Segoe UI", 9),
+            fill="#3a3a3a",
+            anchor=tk.CENTER,
+        ))
+
+        self._welcome_items = items
+
+    def _hide_welcome(self) -> None:
+        """Remove welcome overlay items."""
+        for item_id in self._welcome_items:
+            self._canvas.delete(item_id)
+        self._welcome_items = []
 
     def _build_loss_panel(self) -> None:
         """Build a collapsible matplotlib loss-curve frame below the canvas."""
@@ -242,6 +335,7 @@ class ImageViewer(ttk.Frame):
 
     def set_image(self, array: np.ndarray) -> None:
         """Display a NumPy image ``(H, W)`` or ``(H, W, 3)`` (RGB uint8)."""
+        self._hide_welcome()
         self._source_array = array.copy()
         if array.ndim == 2:
             self._source_image = Image.fromarray(array, mode="L")
@@ -298,6 +392,7 @@ class ImageViewer(ttk.Frame):
         self._photo = None
         self._image_id = None
         self._overlay_rects.clear()
+        self._draw_welcome()
 
     def get_zoom_percent(self) -> float:
         return self._scale * 100.0
@@ -742,6 +837,18 @@ class ImageViewer(ttk.Frame):
         self._refresh()
 
     # ------------------------------------------------------------------
+    # Right-click context menu
+    # ------------------------------------------------------------------
+
+    def _on_right_click(self, event: tk.Event) -> None:
+        """Show context menu on right-click."""
+        if self._context_menu_callback is None or self._source_image is None:
+            return
+        img_coords = self._canvas_to_image(event.x, event.y)
+        region = self._current_region_sel
+        self._context_menu_callback(event, img_coords, region)
+
+    # ------------------------------------------------------------------
     # Motion and configure
     # ------------------------------------------------------------------
 
@@ -761,3 +868,6 @@ class ImageViewer(ttk.Frame):
     def _on_configure(self, _event: tk.Event) -> None:
         if self._source_image is not None:
             self.fit_to_window()
+        elif self._welcome_items:
+            self._hide_welcome()
+            self._draw_welcome()
