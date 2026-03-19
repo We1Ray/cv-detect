@@ -142,6 +142,30 @@ class ImagePreprocessor:
         transform = self.get_transforms(augment=False)
         return transform(img)
 
+    def preprocess(self, image: np.ndarray) -> torch.Tensor:
+        """Preprocess a numpy image array and return a normalised tensor ``(C, H, W)``.
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Input image as ``(H, W)`` grayscale or ``(H, W, 3)`` BGR/RGB uint8.
+
+        Returns
+        -------
+        torch.Tensor
+            Normalised ``(C, H, W)`` float32 tensor.
+        """
+        if image.ndim == 2:
+            pil_img = Image.fromarray(image, mode="L")
+        elif image.ndim == 3 and image.shape[2] == 1:
+            pil_img = Image.fromarray(image[:, :, 0], mode="L")
+        else:
+            # Assume RGB (or convert BGR→RGB if needed by caller)
+            pil_img = Image.fromarray(image).convert("L" if self.grayscale else "RGB")
+
+        transform = self.get_transforms(augment=False)
+        return transform(pil_img)
+
     def inverse_normalize(self, tensor: torch.Tensor) -> np.ndarray:
         """Undo normalisation and convert a ``(C, H, W)`` tensor to a uint8 ``(H, W, C)`` ndarray.
 

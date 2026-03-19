@@ -491,6 +491,13 @@ class ImageOpsMixin:
             f"\u7f3a\u9677\u5340\u57df: {len(result.defect_regions)}"
         )
 
+        # Update OK/NG judgment indicator
+        self.update_judgment(
+            is_pass=not result.is_defective,
+            score=result.anomaly_score,
+            message=f"缺陷區域: {len(result.defect_regions)}",
+        )
+
     def _cmd_batch_inspect(self: "HalconApp") -> None:
         from dl_anomaly.gui.dialogs import BatchInspectDialog
 
@@ -746,13 +753,15 @@ class ImageOpsMixin:
     def _cmd_about(self: "HalconApp") -> None:
         messagebox.showinfo(
             "\u95dc\u65bc",
-            "DL \u7570\u5e38\u5075\u6e2c\u5668 - HALCON HDevelop Style\n\n"
-            "\u6df1\u5ea6\u5b78\u7fd2\u7570\u5e38\u5075\u6e2c\u7cfb\u7d71\n"
-            "\u4f7f\u7528 PyTorch \u5377\u7a4d\u81ea\u52d5\u7de8\u78bc\u5668\n\n"
-            "\u67b6\u69cb: Encoder-Decoder + \u6b98\u5dee\u5340\u584a\n"
-            "\u640d\u5931: MSE + SSIM \u7d44\u5408\u640d\u5931\n"
-            "\u5f8c\u8655\u7406: \u9ad8\u65af\u5e73\u6ed1 + Otsu \u95be\u503c\n"
-            "\u81ea\u9069\u61c9\u95be\u503c\u5206\u985e",
+            "CV \u7f3a\u9677\u5075\u6e2c\u5668 v2.0 - HALCON HDevelop Style\n\n"
+            "\u6574\u5408\u5f0f\u5de5\u696d\u6aa2\u6e2c\u7cfb\u7d71\n\n"
+            "\u2501 DL \u6a21\u5f0f (Autoencoder)\n"
+            "  PyTorch CNN \u81ea\u52d5\u7de8\u78bc\u5668 + PatchCore\n"
+            "  MSE + SSIM \u7d44\u5408\u640d\u5931\n\n"
+            "\u2501 Variation Model \u6a21\u5f0f\n"
+            "  Welford \u7dda\u4e0a\u7d71\u8a08\u6f14\u7b97\u6cd5\n"
+            "  \u5747\u503c/\u6a19\u6e96\u5dee \u95be\u503c\u5075\u6e2c\n\n"
+            "Framework: tkinter + OpenCV + PyTorch",
         )
 
     # ==================================================================

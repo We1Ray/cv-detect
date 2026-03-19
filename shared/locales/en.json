@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "DL Anomaly Detector",
+    "standby": "Ready"
+  },
+  "menu": {
+    "file": {
+      "open": "Open Image",
+      "save": "Save",
+      "exit": "Exit"
+    },
+    "tools": {
+      "threshold": "Threshold Segmentation",
+      "shape_matching": "Shape Matching"
+    }
+  },
+  "inspection": {
+    "pass": "Pass",
+    "fail": "Defect",
+    "score": "Score",
+    "defect_count": "Defect Count",
+    "result": "Inspection Result"
+  },
+  "judgment": {
+    "pass": "PASS",
+    "fail": "FAIL",
+    "idle": "Standby",
+    "score": "Score",
+    "total": "Total",
+    "pass_count": "Pass",
+    "fail_count": "Fail",
+    "yield_rate": "Yield",
+    "last_time": "Last"
+  },
+  "dashboard": {
+    "yield_rate": "Yield Rate",
+    "total": "Total",
+    "pass_count": "Pass",
+    "fail_count": "Fail",
+    "mean_score": "Mean Score"
+  },
+  "live": {
+    "title": " Live Inspection Panel ",
+    "source": "Source:",
+    "folder": "Folder",
+    "camera": "Camera",
+    "browse": "Browse...",
+    "interval_ms": "Interval (ms):",
+    "start": "Start",
+    "stop": "Stop",
+    "single_shot": "Single Shot",
+    "auto_save": "Auto-save Results",
+    "running": "Running",
+    "stopped": "Stopped",
+    "inspected": "Inspected:",
+    "passed": "Pass:",
+    "failed": "Fail:",
+    "log_title": "Inspection Log (last 20)",
+    "select_folder": "Select Inspection Image Folder",
+    "warn_no_folder": "Please select a source folder first",
+    "warn_folder_missing": "Folder not found: {path}",
+    "log_started": "Live inspection started",
+    "log_stopped": "Live inspection stopped",
+    "error_start_failed": "Start failed: {error}"
+  }
+}

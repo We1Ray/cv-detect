@@ -33,6 +33,9 @@ from shared.app_state import AppState
 from shared.progress_manager import ProgressManager
 from shared.error_dialog import show_error
 from shared.history_panel import HistoryPanel
+from shared.judgment_indicator import JudgmentIndicator
+from shared.live_inspection_panel import LiveInspectionPanel
+from shared.dashboard_panel import DashboardPanel
 
 import cv2
 import numpy as np
@@ -50,6 +53,7 @@ from dl_anomaly.gui.mixins_image_ops import ImageOpsMixin
 from dl_anomaly.gui.mixins_dialogs import DialogMixin
 from dl_anomaly.gui.mixins_region import RegionMixin
 from dl_anomaly.gui.mixins_halcon import HalconOpsMixin
+from dl_anomaly.gui.mixins_vm_ops import VMOpsMixin
 from dl_anomaly.gui.platform_keys import (
     IS_MAC, bind_mod, bind_mod_shift,
     display, display_shift, DELETE_LABEL,
@@ -72,6 +76,7 @@ class HalconApp(
     DialogMixin,
     RegionMixin,
     HalconOpsMixin,
+    VMOpsMixin,
     tk.Tk,
 ):
     """Top-level HALCON HDevelop-style application window."""
@@ -80,9 +85,9 @@ class HalconApp(
         super().__init__()
         self.config = config
 
-        self.title("DL \u7570\u5e38\u5075\u6e2c\u5668 v1.1 \u2014 Industrial Inspection")
+        self.title("CV \u7f3a\u9677\u5075\u6e2c\u5668 v2.0 \u2014 DL + Variation Model")
         self.geometry("1400x900")
-        self.minsize(1000, 650)
+        self.minsize(1000, 750)
 
         # Configure dark theme
         self._setup_theme()
@@ -94,6 +99,7 @@ class HalconApp(
         self._inference_pipeline = None  # InferencePipeline instance
         self._model = None
         self._model_state: Optional[Dict] = None
+        self._vm_model = None  # VariationModel instance
         self._current_image_path: Optional[str] = None
         self._recent_files: List[str] = []
         self._undo_stack: List[int] = []  # pipeline step indices
@@ -221,6 +227,9 @@ class HalconApp(
             "compare": self._cmd_compare_steps,
             "grid": self._cmd_toggle_grid,
             "crosshair": self._cmd_toggle_crosshair,
+            "vm_train": self._cmd_vm_train,
+            "vm_load": self._cmd_vm_load_model,
+            "vm_inspect": self._cmd_vm_inspect_single,
         }
         self._toolbar = Toolbar(self, callbacks=callbacks)
         self._toolbar.pack(fill=tk.X, padx=2, pady=(2, 0))
@@ -258,20 +267,41 @@ class HalconApp(
         right_frame = ttk.Frame(self._paned)
         self._paned.add(right_frame, weight=0)
 
-        self._props_panel = PropertiesPanel(right_frame)
+        # OK/NG Judgment Indicator (top of right panel, always visible)
+        self._judgment_indicator = JudgmentIndicator(right_frame, height=100)
+        self._judgment_indicator.pack(fill=tk.X, padx=2, pady=(2, 4))
+
+        # Right panel uses PanedWindow for resizable sections
+        right_paned = ttk.PanedWindow(right_frame, orient=tk.VERTICAL)
+        right_paned.pack(fill=tk.BOTH, expand=True)
+
+        self._props_panel = PropertiesPanel(right_paned)
         self._props_panel.set_region_highlight_callback(self._on_region_highlight)
         self._props_panel.set_region_remove_callback(self._on_region_remove)
-        self._props_panel.pack(fill=tk.X, padx=2, pady=(2, 4))
+        right_paned.add(self._props_panel, weight=0)
 
         self._ops_panel = OperationsPanel(
-            right_frame,
+            right_paned,
             on_apply=self._on_operation_applied,
             get_current_image=self._get_current_image,
         )
-        self._ops_panel.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        right_paned.add(self._ops_panel, weight=1)
 
-        self._history_panel = HistoryPanel(right_frame)
-        self._history_panel.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        # Live Inspection Panel
+        self._live_panel = LiveInspectionPanel(
+            right_paned,
+            on_start=self._on_live_start,
+            on_stop=self._on_live_stop,
+            on_inspect_single=self._on_live_inspect_single,
+        )
+        right_paned.add(self._live_panel, weight=0)
+
+        # SPC Dashboard Panel
+        self._dashboard_panel = DashboardPanel(right_paned)
+        right_paned.add(self._dashboard_panel, weight=0)
+
+        self._history_panel = HistoryPanel(right_paned)
+        right_paned.add(self._history_panel, weight=0)
 
         # Initialise operations panel with config values
         self._ops_panel.set_params(
@@ -685,6 +715,8 @@ class HalconApp(
         self._step_var.set(f"{index + 1} / {total}")
 
     def _on_pipeline_step_delete(self, index: int) -> None:
+        if not messagebox.askyesno("確認", "確定要刪除此步驟嗎？"):
+            return
         self._pipeline_panel.delete_step(index)
         step = self._pipeline_panel.get_current_step()
         if step:
@@ -967,10 +999,45 @@ class HalconApp(
             self._add_pipeline_step("\u53cd\u8272", result)
 
     # ==================================================================
+    # Live inspection callbacks
+    # ==================================================================
+
+    def _on_live_start(self, source: str, interval: int) -> None:
+        """Start live inspection loop."""
+        if self._inference_pipeline is None:
+            messagebox.showwarning("警告", "請先載入模型再啟動即時檢測。")
+            self._live_panel.stop_inspection()
+            return
+        self.set_status(f"即時檢測啟動中... 來源: {source}, 間隔: {interval}ms")
+
+    def _on_live_stop(self) -> None:
+        """Stop live inspection loop."""
+        self.set_status("即時檢測已停止")
+
+    def _on_live_inspect_single(self) -> None:
+        """Run a single inspection from the live panel."""
+        self._cmd_inspect_single()
+
+    def update_judgment(self, is_pass: bool, score: float, message: str = "") -> None:
+        """Update the OK/NG judgment indicator with inspection results.
+
+        Called after each inspection completes to provide visual feedback.
+        """
+        self._judgment_indicator.set_result(is_pass, score, message)
+        self._dashboard_panel.update_from_result(is_pass, score)
+        # Also update live panel if running
+        if self._live_panel.is_running:
+            img_path = self._current_image_path or ""
+            self._live_panel.update_result(is_pass, score, img_path)
+
+    # ==================================================================
     # Close
     # ==================================================================
 
     def _on_close(self) -> None:
+        # Stop live inspection if running
+        if self._live_panel.is_running:
+            self._live_panel.stop_inspection()
         self._app_state.save_geometry(self)
         self._app_state.save_sash_positions(self._paned)
         self.destroy()

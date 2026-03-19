@@ -52,6 +52,9 @@ class MenuMixin:
         ops_menu.add_command(label="\u8a08\u7b97\u8aa4\u5dee\u5716", command=self._cmd_compute_error_map)
         ops_menu.add_command(label="\u5957\u7528 SSIM", command=self._cmd_apply_ssim)
         ops_menu.add_command(label="\u5957\u7528\u95be\u503c\u906e\u7f69", command=self._cmd_apply_threshold_mask)
+        ops_menu.add_separator()
+        ops_menu.add_command(label="VM \u55ae\u5f35\u6aa2\u6e2c", command=self._cmd_vm_inspect_single)
+        ops_menu.add_command(label="VM \u6279\u6b21\u6aa2\u6e2c...", command=self._cmd_vm_inspect_batch)
         menubar.add_cascade(label="\u64cd\u4f5c", menu=ops_menu)
 
         # -- Region --
@@ -238,13 +241,36 @@ class MenuMixin:
         # -- Model --
         model_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                              activebackground="#3a3a5c", activeforeground="#ffffff")
-        model_menu.add_command(label="\u8a13\u7df4\u65b0\u6a21\u578b...", command=self._cmd_train, accelerator="F6")
-        model_menu.add_command(label="\u8f09\u5165 Checkpoint...", command=self._cmd_load_model)
-        model_menu.add_command(label="\u5132\u5b58 Checkpoint...", command=self._cmd_save_checkpoint)
+
+        # DL Model submenu
+        dl_model_menu = tk.Menu(model_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+                                activebackground="#3a3a5c", activeforeground="#ffffff")
+        dl_model_menu.add_command(label="\u8a13\u7df4\u65b0\u6a21\u578b...", command=self._cmd_train, accelerator="F6")
+        dl_model_menu.add_command(label="\u8f09\u5165 Checkpoint...", command=self._cmd_load_model)
+        dl_model_menu.add_command(label="\u5132\u5b58 Checkpoint...", command=self._cmd_save_checkpoint)
+        dl_model_menu.add_separator()
+        dl_model_menu.add_command(label="\u6a21\u578b\u8cc7\u8a0a...", command=self._cmd_model_info)
+        dl_model_menu.add_command(label="\u8a08\u7b97\u95be\u503c", command=self._cmd_compute_threshold)
+        model_menu.add_cascade(label="DL \u6a21\u578b (Autoencoder)", menu=dl_model_menu)
+
         model_menu.add_separator()
-        model_menu.add_command(label="\u6a21\u578b\u8cc7\u8a0a...", command=self._cmd_model_info)
-        model_menu.add_command(label="\u8a08\u7b97\u95be\u503c", command=self._cmd_compute_threshold)
+
+        # Variation Model submenu
+        vm_model_menu = tk.Menu(model_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+                                activebackground="#3a3a5c", activeforeground="#ffffff")
+        vm_model_menu.add_command(label="\u8a13\u7df4\u65b0\u6a21\u578b...", command=self._cmd_vm_train)
+        vm_model_menu.add_command(label="\u8f09\u5165\u6a21\u578b (.npz)...", command=self._cmd_vm_load_model)
+        vm_model_menu.add_command(label="\u5132\u5b58\u6a21\u578b...", command=self._cmd_vm_save_model)
+        vm_model_menu.add_separator()
+        vm_model_menu.add_command(label="\u6a21\u578b\u8cc7\u8a0a...", command=self._cmd_vm_model_info)
+        vm_model_menu.add_command(label="\u91cd\u65b0\u8a08\u7b97\u95be\u503c", command=self._cmd_vm_reprepare_thresholds)
+        vm_model_menu.add_separator()
+        vm_model_menu.add_command(label="\u95be\u503c\u8996\u89ba\u5316...", command=self._cmd_vm_show_threshold_viz)
+        model_menu.add_cascade(label="Variation Model (\u7d71\u8a08)", menu=vm_model_menu)
+
         model_menu.add_separator()
+
+        # Pipeline Model submenu
         pipeline_model_menu = tk.Menu(model_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                                        activebackground="#3a3a5c", activeforeground="#ffffff")
         pipeline_model_menu.add_command(label="\u5132\u5b58\u7ba1\u7dda\u6a21\u578b...", command=self._cmd_save_pipeline_model)

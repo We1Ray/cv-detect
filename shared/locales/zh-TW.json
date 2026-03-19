@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "DL 異常偵測器",
+    "standby": "就緒"
+  },
+  "menu": {
+    "file": {
+      "open": "開啟圖片",
+      "save": "儲存",
+      "exit": "結束"
+    },
+    "tools": {
+      "threshold": "閾值分割",
+      "shape_matching": "形狀匹配"
+    }
+  },
+  "inspection": {
+    "pass": "通過",
+    "fail": "瑕疵",
+    "score": "分數",
+    "defect_count": "瑕疵數",
+    "result": "檢測結果"
+  },
+  "judgment": {
+    "pass": "PASS",
+    "fail": "FAIL",
+    "idle": "待機中",
+    "score": "分數",
+    "total": "總數",
+    "pass_count": "通過",
+    "fail_count": "不良",
+    "yield_rate": "良率",
+    "last_time": "最後"
+  },
+  "dashboard": {
+    "yield_rate": "良率",
+    "total": "總數",
+    "pass_count": "通過",
+    "fail_count": "不良",
+    "mean_score": "平均分數"
+  },
+  "live": {
+    "title": " 即時檢測面板 ",
+    "source": "來源:",
+    "folder": "資料夾",
+    "camera": "攝影機",
+    "browse": "瀏覽...",
+    "interval_ms": "間隔 (ms):",
+    "start": "啟動",
+    "stop": "停止",
+    "single_shot": "單次檢測",
+    "auto_save": "自動儲存結果",
+    "running": "運行中",
+    "stopped": "已停止",
+    "inspected": "已檢測:",
+    "passed": "通過:",
+    "failed": "不良:",
+    "log_title": "檢測紀錄 (最近 20 筆)",
+    "select_folder": "選擇檢測影像資料夾",
+    "warn_no_folder": "請先選擇來源資料夾",
+    "warn_folder_missing": "資料夾不存在: {path}",
+    "log_started": "開始即時檢測",
+    "log_stopped": "停止即時檢測",
+    "error_start_failed": "啟動失敗: {error}"
+  }
+}

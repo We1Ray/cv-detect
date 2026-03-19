@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "DL 异常检测器",
+    "standby": "就绪"
+  },
+  "menu": {
+    "file": {
+      "open": "打开图片",
+      "save": "保存",
+      "exit": "退出"
+    },
+    "tools": {
+      "threshold": "阈值分割",
+      "shape_matching": "形状匹配"
+    }
+  },
+  "inspection": {
+    "pass": "通过",
+    "fail": "缺陷",
+    "score": "分数",
+    "defect_count": "缺陷数",
+    "result": "检测结果"
+  },
+  "judgment": {
+    "pass": "PASS",
+    "fail": "FAIL",
+    "idle": "待机中",
+    "score": "分数",
+    "total": "总数",
+    "pass_count": "通过",
+    "fail_count": "不良",
+    "yield_rate": "良率",
+    "last_time": "最后"
+  },
+  "dashboard": {
+    "yield_rate": "良率",
+    "total": "总数",
+    "pass_count": "通过",
+    "fail_count": "不良",
+    "mean_score": "平均分数"
+  },
+  "live": {
+    "title": " 实时检测面板 ",
+    "source": "来源:",
+    "folder": "文件夹",
+    "camera": "摄像头",
+    "browse": "浏览...",
+    "interval_ms": "间隔 (ms):",
+    "start": "启动",
+    "stop": "停止",
+    "single_shot": "单次检测",
+    "auto_save": "自动保存结果",
+    "running": "运行中",
+    "stopped": "已停止",
+    "inspected": "已检测:",
+    "passed": "通过:",
+    "failed": "不良:",
+    "log_title": "检测记录 (最近 20 条)",
+    "select_folder": "选择检测图像文件夹",
+    "warn_no_folder": "请先选择来源文件夹",
+    "warn_folder_missing": "文件夹不存在: {path}",
+    "log_started": "开始实时检测",
+    "log_stopped": "停止实时检测",
+    "error_start_failed": "启动失败: {error}"
+  }
+}

@@ -61,8 +61,9 @@ class TestPreprocessorParams:
             "brightness_jitter": 0.1,
             "vertical_flip_p": 0.5,
         }
-        transform = ImagePreprocessor.get_transforms(
-            image_size=64, grayscale=False, augment=True,
+        preprocessor = ImagePreprocessor(image_size=64, grayscale=False)
+        transform = preprocessor.get_transforms(
+            augment=True,
             augmentation_params=aug_params,
         )
         assert transform is not None

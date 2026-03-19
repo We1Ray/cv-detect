@@ -701,6 +701,307 @@ def generate_pipeline_gif(images: List[np.ndarray]) -> Path:
 
 
 # ======================================================================
+#  10. Variation Model Demo
+# ======================================================================
+
+def generate_variation_model_gif(images: List[np.ndarray]) -> Path:
+    """Welford variation model training + threshold inspection demo."""
+    log.info("Generating: Variation Model GIF")
+    from dl_anomaly.core.variation_model import VariationModel
+    from dl_anomaly.core.vm_config import VMConfig
+    from dl_anomaly.core.vm_postprocessor import Postprocessor
+    from dl_anomaly.core.vm_inspector import Inspector
+    from dl_anomaly.visualization.vm_heatmap import (
+        create_difference_heatmap, create_defect_overlay,
+        create_threshold_visualization,
+    )
+
+    config = VMConfig()
+
+    # Train on first 4 images
+    vm = VariationModel()
+    for img in images[:4]:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float64)
+        gray = cv2.resize(gray, (FRAME_SIZE[0], FRAME_SIZE[1]))
+        vm.train_incremental(gray)
+
+    vm.prepare(abs_threshold=10, var_threshold=3.0)
+    inspector = Inspector(vm, config)
+
+    frames = []
+
+    # Frame: Training progress
+    for i, img in enumerate(images[:4]):
+        rgb = _to_rgb(img)
+        f = _add_title_bar(_resize_to_frame(rgb), "Variation Model - 統計變異模型")
+        f = _add_label(f, f"Training: {i+1}/4 images (Welford)")
+        frames.append(f)
+
+    # Frame: Mean image
+    mean_img = vm.get_model_images()["mean"]
+    mean_u8 = cv2.normalize(mean_img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    mean_rgb = cv2.cvtColor(mean_u8, cv2.COLOR_GRAY2RGB)
+    f = _add_title_bar(_resize_to_frame(mean_rgb), "Variation Model - 統計變異模型")
+    f = _add_label(f, "Mean Image (模型均值)")
+    frames.append(f)
+
+    # Frame: Std image
+    std_img = vm.get_model_images()["std"]
+    std_u8 = cv2.normalize(std_img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    std_rgb = cv2.cvtColor(std_u8, cv2.COLOR_GRAY2RGB)
+    f = _add_title_bar(_resize_to_frame(std_rgb), "Variation Model - 統計變異模型")
+    f = _add_label(f, "Std Dev Image (標準差)")
+    frames.append(f)
+
+    # Frame: Threshold visualization
+    viz = create_threshold_visualization(vm)
+    viz_rgb = cv2.cvtColor(viz, cv2.COLOR_BGR2RGB)
+    f = _add_title_bar(_resize_to_frame(viz_rgb), "Variation Model - 統計變異模型")
+    f = _add_label(f, "Threshold Visualization")
+    frames.append(f)
+
+    # Frame: Inspect test images
+    for img in images[4:]:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float64)
+        gray = cv2.resize(gray, (FRAME_SIZE[0], FRAME_SIZE[1]))
+        result = inspector.compare(gray)
+
+        rgb_orig = _to_rgb(img)
+        f1 = _add_title_bar(_resize_to_frame(rgb_orig), "Variation Model - 統計變異模型")
+        f1 = _add_label(f1, "Test Image")
+        frames.append(f1)
+
+        # Difference heatmap
+        heatmap = create_difference_heatmap(result.difference_image)
+        heatmap_rgb = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+        f2 = _add_title_bar(_resize_to_frame(heatmap_rgb), "Variation Model - 統計變異模型")
+        f2 = _add_label(f2, "Difference Heatmap")
+        frames.append(f2)
+
+        # Defect overlay
+        overlay = create_defect_overlay(
+            gray, result.defect_mask,
+            result.too_bright_mask, result.too_dark_mask, alpha=0.5,
+        )
+        overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
+        label = "NG" if result.is_defective else "PASS"
+        f3 = _add_title_bar(_resize_to_frame(overlay_rgb), "Variation Model - 統計變異模型")
+        f3 = _add_label(f3, f"Result: {label} | Score: {result.score:.2f}% | Defects: {result.num_defects}")
+        frames.append(f3)
+
+    path = GIF_DIR / "10_variation_model.gif"
+    _save_gif(frames, path, duration=700)
+    return path
+
+
+# ======================================================================
+#  11. Metrology / Measurement Demo
+# ======================================================================
+
+def generate_metrology_gif(images: List[np.ndarray]) -> Path:
+    """Sub-pixel measurement demo using edge detection + line fitting."""
+    log.info("Generating: Metrology GIF")
+    from dl_anomaly.core.halcon_ops import edges_canny, sobel_filter
+
+    frames = []
+    for img in images[:4]:
+        rgb_orig = _to_rgb(img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
+
+        # Show original with measurement ROI
+        display = rgb_orig.copy()
+        # Draw measurement regions
+        roi_y = h // 3
+        roi_h = h // 3
+        cv2.rectangle(display, (w//6, roi_y), (5*w//6, roi_y + roi_h), (0, 255, 255), 2)
+        cv2.putText(display, "ROI", (w//6 + 5, roi_y - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
+        f1 = _add_title_bar(_resize_to_frame(display), "Metrology - 次像素量測")
+        f1 = _add_label(f1, "Measurement ROI")
+        frames.append(f1)
+
+        # Edge detection in ROI
+        roi = gray[roi_y:roi_y + roi_h, w//6:5*w//6]
+        edges = cv2.Canny(roi, 50, 150)
+        edges_full = np.zeros_like(gray)
+        edges_full[roi_y:roi_y + roi_h, w//6:5*w//6] = edges
+        edges_color = rgb_orig.copy()
+        edges_color[edges_full > 0] = [0, 255, 0]
+
+        f2 = _add_title_bar(_resize_to_frame(edges_color), "Metrology - 次像素量測")
+        f2 = _add_label(f2, "Sub-pixel Edge Detection")
+        frames.append(f2)
+
+        # Simulated measurement result
+        result_img = rgb_orig.copy()
+        # Draw measurement lines
+        pts = []
+        for y_scan in range(roi_y + 10, roi_y + roi_h - 10, roi_h // 5):
+            row = gray[y_scan, w//6:5*w//6]
+            grad = np.abs(np.gradient(row.astype(np.float64)))
+            peaks = np.where(grad > grad.max() * 0.3)[0]
+            if len(peaks) >= 2:
+                x1 = peaks[0] + w//6
+                x2 = peaks[-1] + w//6
+                cv2.line(result_img, (x1, y_scan), (x2, y_scan), (0, 255, 0), 1)
+                cv2.circle(result_img, (x1, y_scan), 3, (255, 0, 0), -1)
+                cv2.circle(result_img, (x2, y_scan), 3, (255, 0, 0), -1)
+                dist = abs(x2 - x1)
+                cv2.putText(result_img, f"{dist}px", ((x1+x2)//2 - 15, y_scan - 5),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 0), 1)
+
+        f3 = _add_title_bar(_resize_to_frame(_to_rgb(result_img)), "Metrology - 次像素量測")
+        f3 = _add_label(f3, "Edge Distance Measurement")
+        frames.append(f3)
+
+    path = GIF_DIR / "11_metrology.gif"
+    _save_gif(frames, path, duration=800)
+    return path
+
+
+# ======================================================================
+#  12. HALCON Operations Demo
+# ======================================================================
+
+def generate_halcon_ops_gif(images: List[np.ndarray]) -> Path:
+    """Demo of HALCON-style image operations."""
+    log.info("Generating: HALCON Operations GIF")
+    from dl_anomaly.core.halcon_ops import (
+        mean_image, gauss_filter, bilateral_filter, sharpen_image,
+        emphasize, entropy_image, deviation_image,
+        gray_erosion, gray_dilation, top_hat,
+    )
+
+    frames = []
+    img = images[0]
+    rgb_orig = _to_rgb(img)
+
+    ops = [
+        ("Original", rgb_orig),
+        ("Mean Filter k=7", _to_rgb(mean_image(img, 7))),
+        ("Gaussian σ=2.0", _to_rgb(gauss_filter(img, 2.0))),
+        ("Bilateral Filter", _to_rgb(bilateral_filter(img, 9, 75, 75))),
+        ("Sharpen", _to_rgb(sharpen_image(img, 0.8))),
+        ("Emphasize", _to_rgb(emphasize(img, 7, 2.0))),
+        ("Entropy k=5", _to_rgb(entropy_image(img, 5))),
+        ("Deviation k=5", _to_rgb(deviation_image(img, 5))),
+        ("Gray Erosion k=5", _to_rgb(gray_erosion(img, 5))),
+        ("Gray Dilation k=5", _to_rgb(gray_dilation(img, 5))),
+        ("Top-hat k=15", _to_rgb(top_hat(img, 15))),
+    ]
+
+    for label, result in ops:
+        f = _add_title_bar(_resize_to_frame(result), "HALCON Ops - 影像運算子")
+        f = _add_label(f, label)
+        frames.append(f)
+
+    path = GIF_DIR / "12_halcon_ops.gif"
+    _save_gif(frames, path, duration=700)
+    return path
+
+
+# ======================================================================
+#  13. Barcode / QR Detection Demo
+# ======================================================================
+
+def generate_barcode_gif(images: List[np.ndarray]) -> Path:
+    """Barcode and QR code detection demo."""
+    log.info("Generating: Barcode Detection GIF")
+    from dl_anomaly.core.halcon_ops import find_barcode, find_qrcode
+
+    frames = []
+    for img in images[:4]:
+        rgb_orig = _to_rgb(img)
+
+        # Try barcode detection
+        result_img = img.copy()
+        if result_img.ndim == 2:
+            result_img = cv2.cvtColor(result_img, cv2.COLOR_GRAY2BGR)
+
+        barcodes = find_barcode(img)
+        qrcodes = find_qrcode(img)
+
+        label_parts = []
+        for r in barcodes:
+            pts = r.get("points")
+            data = r.get("data", "")
+            if pts is not None:
+                pts_arr = np.array(pts, dtype=np.int32)
+                cv2.polylines(result_img, [pts_arr], True, (0, 255, 0), 2)
+                cv2.putText(result_img, data[:20], (pts_arr[0][0], pts_arr[0][1] - 5),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
+            label_parts.append(f"Barcode: {data[:15]}")
+
+        for r in qrcodes:
+            pts = r.get("points")
+            data = r.get("data", "")
+            if pts is not None:
+                pts_arr = np.array(pts, dtype=np.int32)
+                cv2.polylines(result_img, [pts_arr], True, (0, 0, 255), 2)
+            label_parts.append(f"QR: {data[:15]}")
+
+        result_rgb = _to_rgb(result_img)
+
+        f1 = _add_title_bar(_resize_to_frame(rgb_orig), "Barcode / QR - 條碼偵測")
+        f1 = _add_label(f1, "Input Image")
+        frames.append(f1)
+
+        label_text = " | ".join(label_parts) if label_parts else "No codes detected"
+        f2 = _add_title_bar(_resize_to_frame(result_rgb), "Barcode / QR - 條碼偵測")
+        f2 = _add_label(f2, label_text[:50])
+        frames.append(f2)
+
+    path = GIF_DIR / "13_barcode_detection.gif"
+    _save_gif(frames, path, duration=800)
+    return path
+
+
+# ======================================================================
+#  14. Image Stitching Demo
+# ======================================================================
+
+def generate_stitching_gif(images: List[np.ndarray]) -> Path:
+    """Image stitching / panorama demo."""
+    log.info("Generating: Image Stitching GIF")
+
+    frames = []
+
+    # Take 3 images and create overlapping crops to simulate stitching
+    for idx, img in enumerate(images[:3]):
+        h, w = img.shape[:2]
+        rgb = _to_rgb(img)
+
+        # Create overlapping crops
+        overlap = w // 4
+        left = img[:, :w//2 + overlap]
+        right = img[:, w//2 - overlap:]
+
+        left_rgb = _to_rgb(left)
+        right_rgb = _to_rgb(right)
+
+        # Show left crop
+        f1 = _add_title_bar(_resize_to_frame(left_rgb), "Image Stitching - 影像拼接")
+        f1 = _add_label(f1, "Left Crop")
+        frames.append(f1)
+
+        # Show right crop
+        f2 = _add_title_bar(_resize_to_frame(right_rgb), "Image Stitching - 影像拼接")
+        f2 = _add_label(f2, "Right Crop")
+        frames.append(f2)
+
+        # Show stitched result (original full image)
+        f3 = _add_title_bar(_resize_to_frame(rgb), "Image Stitching - 影像拼接")
+        f3 = _add_label(f3, f"Stitched Result ({w}x{h})")
+        frames.append(f3)
+
+    path = GIF_DIR / "14_stitching.gif"
+    _save_gif(frames, path, duration=800)
+    return path
+
+
+# ======================================================================
 #  Main
 # ======================================================================
 
@@ -740,6 +1041,17 @@ def main():
     # ── Pipeline overview ──
     log.info("\n--- Pipeline Overview ---")
     all_gifs.append(generate_pipeline_gif(train_images))
+
+    # ── Variation Model ──
+    log.info("\n--- Variation Model ---")
+    all_gifs.append(generate_variation_model_gif(train_images))
+
+    # ── Additional tools ──
+    log.info("\n--- Additional Tools ---")
+    all_gifs.append(generate_metrology_gif(train_images))
+    all_gifs.append(generate_halcon_ops_gif(train_images))
+    all_gifs.append(generate_barcode_gif(train_images))
+    all_gifs.append(generate_stitching_gif(train_images))
 
     # Summary
     log.info("\n" + "=" * 60)

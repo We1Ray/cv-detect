@@ -28,6 +28,9 @@ from shared.app_state import AppState
 from shared.error_dialog import show_error
 from shared.history_panel import HistoryPanel
 from shared.progress_manager import ProgressManager
+from shared.judgment_indicator import JudgmentIndicator
+from shared.live_inspection_panel import LiveInspectionPanel
+from shared.dashboard_panel import DashboardPanel
 
 from config import Config
 from gui.image_viewer import ImageViewer
@@ -519,6 +522,10 @@ class HalconApp(tk.Tk):
         right_frame = ttk.Frame(self._main_paned)
         self._main_paned.add(right_frame, weight=0)
 
+        # OK/NG 判定指示器
+        self._judgment_indicator = JudgmentIndicator(right_frame, height=100)
+        self._judgment_indicator.pack(fill=tk.X, padx=2, pady=(2, 4))
+
         # 右側使用 PanedWindow 上下分割
         right_paned = ttk.PanedWindow(right_frame, orient=tk.VERTICAL)
         right_paned.pack(fill=tk.BOTH, expand=True)
@@ -534,6 +541,19 @@ class HalconApp(tk.Tk):
             on_param_change=self._on_param_change,
         )
         right_paned.add(self.operations_panel, weight=1)
+
+        # 即時檢測面板
+        self._live_panel = LiveInspectionPanel(
+            right_paned,
+            on_start=self._on_live_start,
+            on_stop=self._on_live_stop,
+            on_inspect_single=lambda: self._inspect_single(),
+        )
+        right_paned.add(self._live_panel, weight=0)
+
+        # SPC Dashboard 面板
+        self._dashboard_panel = DashboardPanel(right_paned)
+        right_paned.add(self._dashboard_panel, weight=0)
 
         # 操作歷史面板
         self._history_panel = HistoryPanel(right_paned)
@@ -1153,6 +1173,21 @@ class HalconApp(tk.Tk):
         )
         self.set_status_success(f"檢測完成: {image_path.name} - {detail}")
         self._history_panel.add_entry("檢測", f"{image_path.name} - {status}")
+
+        # 更新 OK/NG 判定指示器
+        self._judgment_indicator.set_result(
+            is_pass=not result.is_defective,
+            score=result.score,
+            message=f"瑕疵數: {result.num_defects}",
+        )
+        self._dashboard_panel.update_from_result(
+            not result.is_defective, result.score,
+        )
+        # 更新即時檢測面板
+        if self._live_panel.is_running:
+            self._live_panel.update_result(
+                not result.is_defective, result.score, str(image_path),
+            )
 
         if result.is_defective:
             messagebox.showwarning(
@@ -2105,8 +2140,26 @@ class HalconApp(tk.Tk):
             set_status=self.set_status,
         )
 
+    # ================================================================== #
+    #  即時檢測回調                                                        #
+    # ================================================================== #
+
+    def _on_live_start(self, source: str, interval: int) -> None:
+        """啟動即時檢測。"""
+        if self.model is None or not self.model.is_trained:
+            messagebox.showwarning("警告", "請先載入或訓練模型再啟動即時檢測。")
+            self._live_panel.stop_inspection()
+            return
+        self.set_status(f"即時檢測啟動中... 來源: {source}, 間隔: {interval}ms")
+
+    def _on_live_stop(self) -> None:
+        """停止即時檢測。"""
+        self.set_status("即時檢測已停止")
+
     def _on_close(self) -> None:
         """關閉應用程式。"""
+        if self._live_panel.is_running:
+            self._live_panel.stop_inspection()
         self._app_state.save_geometry(self)
         self._app_state.save_sash_positions(self._main_paned)
         self.destroy()
