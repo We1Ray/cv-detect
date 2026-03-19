@@ -1,4 +1,4 @@
-"""Dialogs for the HALCON HDevelop-style DL Anomaly Detector.
+"""Dialogs for the Industrial Vision-style DL Anomaly Detector.
 
 Includes:
 - TrainingDialog: directory selection, progress, live loss curve, sample grid

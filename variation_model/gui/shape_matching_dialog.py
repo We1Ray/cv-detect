@@ -48,7 +48,7 @@ _TEMPLATE_PREVIEW_SIZE = 200
 
 
 class ShapeMatchingDialog(tk.Toplevel):
-    """Modal dialog for HALCON-style shape-based matching.
+    """Modal dialog for Vision-style shape-based matching.
 
     Parameters
     ----------

@@ -95,8 +95,8 @@ def replay_recipe(
         name = step.get("name", op)
 
         try:
-            if cat == "halcon":
-                current_image = _replay_halcon(op, params, current_image)
+            if cat in ("halcon", "vision"):
+                current_image = _replay_vision(op, params, current_image)
                 results.append((name, current_image, None))
 
             elif cat == "quick_op":
@@ -140,14 +140,15 @@ def replay_recipe(
 # Category handlers
 # ------------------------------------------------------------------
 
-def _replay_halcon(op: str, params: dict, img: np.ndarray) -> np.ndarray:
-    from dl_anomaly.core import halcon_ops as hops
+def _replay_vision(op: str, params: dict, img: np.ndarray) -> np.ndarray:
+    from dl_anomaly.core import vision_ops as hops
 
     _dispatch = {
         "rgb_to_gray": lambda: hops.rgb_to_gray(img),
         "rgb_to_hsv": lambda: hops.rgb_to_hsv(img),
         "rgb_to_hls": lambda: hops.rgb_to_hls(img),
-        "histogram_eq_halcon": lambda: hops.histogram_eq(img),
+        "histogram_eq_halcon": lambda: hops.histogram_eq(img),  # legacy name
+        "histogram_eq": lambda: hops.histogram_eq(img),
         "invert_image": lambda: hops.invert_image(img),
         "illuminate": lambda: hops.illuminate(img, 41, 1.0),
         "abs_image": lambda: hops.abs_image(img),
@@ -187,7 +188,7 @@ def _replay_halcon(op: str, params: dict, img: np.ndarray) -> np.ndarray:
     if func is not None:
         return func()
 
-    raise ValueError(f"Unknown halcon op: {op}")
+    raise ValueError(f"Unknown vision op: {op}")
 
 
 def _replay_quick_op(op: str, params: dict, img: np.ndarray) -> np.ndarray:
@@ -222,7 +223,7 @@ def _replay_quick_op(op: str, params: dict, img: np.ndarray) -> np.ndarray:
 
 
 def _replay_dialog_op(op: str, params: dict, img: np.ndarray) -> np.ndarray:
-    from dl_anomaly.core import halcon_ops as hops
+    from dl_anomaly.core import vision_ops as hops
 
     _map = {
         "均值濾波": lambda: hops.mean_image(img, params.get("ksize", 5)),

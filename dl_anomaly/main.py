@@ -1,8 +1,8 @@
-"""Entry point for the DL Anomaly Detector application (HALCON HDevelop-style).
+"""Entry point for the DL Anomaly Detector application (Industrial Vision-style).
 
 Sets up ``sys.path`` so that the project package is importable regardless of
 the working directory, configures logging, loads configuration, and launches
-the HALCON-style Tkinter GUI.
+the Industrial Vision-style Tkinter GUI.
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ def main() -> None:
     _setup_logging()
 
     logger = logging.getLogger(__name__)
-    logger.info("Starting DL Anomaly Detector (HALCON HDevelop Style)")
+    logger.info("Starting DL Anomaly Detector (Industrial Vision Style)")
 
     # Set the working directory to the project root so that relative
     # paths in .env (e.g. .\checkpoints) resolve correctly.
@@ -77,7 +77,7 @@ def main() -> None:
     splash = _show_splash()
 
     from dl_anomaly.config import Config
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
     config = Config()
     logger.info("Device: %s", config.device)
@@ -88,7 +88,7 @@ def main() -> None:
     # 關閉啟動畫面，啟動主視窗
     splash.destroy()
 
-    app = HalconApp(config)
+    app = InspectorApp(config)
     app.mainloop()
 
 

@@ -1,4 +1,4 @@
-"""Region operations mixin for HalconApp.
+"""Region operations mixin for InspectorApp.
 
 Covers: threshold operations (ensure_region, otsu, adaptive),
 connection, fill_up, shape_trans, morphology, region filter,
@@ -17,17 +17,17 @@ import cv2
 import numpy as np
 
 if TYPE_CHECKING:
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
 
 class RegionMixin:
-    """All region / morphology operations for HalconApp."""
+    """All region / morphology operations for InspectorApp."""
 
     # ==================================================================
     # Region helpers
     # ==================================================================
 
-    def _ensure_region(self: "HalconApp") -> bool:
+    def _ensure_region(self: "InspectorApp") -> bool:
         """Ensure ``_current_region`` exists.
 
         If no region has been created yet, automatically run Otsu threshold
@@ -54,7 +54,7 @@ class RegionMixin:
     # Threshold operations
     # ==================================================================
 
-    def _auto_threshold_otsu(self: "HalconApp") -> None:
+    def _auto_threshold_otsu(self: "InspectorApp") -> None:
         """Auto Otsu threshold segmentation."""
         img = self._get_current_image()
         if img is None:
@@ -75,7 +75,7 @@ class RegionMixin:
 
         self._run_in_bg(_compute, on_done=_done, status_msg="Otsu \u95be\u503c\u5206\u5272\u4e2d...")
 
-    def _auto_threshold_adaptive(self: "HalconApp") -> None:
+    def _auto_threshold_adaptive(self: "InspectorApp") -> None:
         """Auto adaptive threshold segmentation."""
         img = self._get_current_image()
         if img is None:
@@ -100,7 +100,7 @@ class RegionMixin:
     # Connection
     # ==================================================================
 
-    def _region_connection(self: "HalconApp") -> None:
+    def _region_connection(self: "InspectorApp") -> None:
         """Connection operation."""
         if not self._ensure_region():
             return
@@ -130,7 +130,7 @@ class RegionMixin:
     # Fill Up
     # ==================================================================
 
-    def _region_fill_up(self: "HalconApp") -> None:
+    def _region_fill_up(self: "InspectorApp") -> None:
         """Fill region holes with parameter dialog."""
         if not self._ensure_region():
             return
@@ -231,7 +231,7 @@ class RegionMixin:
     # Shape transformation
     # ==================================================================
 
-    def _region_shape_trans(self: "HalconApp", shape_type: str) -> None:
+    def _region_shape_trans(self: "InspectorApp", shape_type: str) -> None:
         """Shape transformation."""
         if not self._ensure_region():
             return
@@ -276,7 +276,7 @@ class RegionMixin:
     # Morphology
     # ==================================================================
 
-    def _region_morphology(self: "HalconApp", op: str) -> None:
+    def _region_morphology(self: "InspectorApp", op: str) -> None:
         """Region morphology with parameter dialog."""
         if not self._ensure_region():
             return
@@ -394,7 +394,7 @@ class RegionMixin:
     # Region filter
     # ==================================================================
 
-    def _open_region_filter(self: "HalconApp") -> None:
+    def _open_region_filter(self: "InspectorApp") -> None:
         """Open region filter dialog."""
         if not self._ensure_region():
             return
@@ -420,7 +420,7 @@ class RegionMixin:
     # Select by gray
     # ==================================================================
 
-    def _region_select_gray(self: "HalconApp") -> None:
+    def _region_select_gray(self: "InspectorApp") -> None:
         """Filter regions by gray value."""
         if not self._ensure_region():
             return
@@ -495,7 +495,7 @@ class RegionMixin:
     # Sort
     # ==================================================================
 
-    def _region_sort(self: "HalconApp") -> None:
+    def _region_sort(self: "InspectorApp") -> None:
         """Sort regions by area."""
         if not self._ensure_region():
             return
@@ -521,7 +521,7 @@ class RegionMixin:
     # Set operations
     # ==================================================================
 
-    def _region_set_op(self: "HalconApp", op: str) -> None:
+    def _region_set_op(self: "InspectorApp", op: str) -> None:
         """Region set operations."""
         if not self._ensure_region():
             return
@@ -540,7 +540,7 @@ class RegionMixin:
     # Blob analysis
     # ==================================================================
 
-    def _open_blob_analysis(self: "HalconApp") -> None:
+    def _open_blob_analysis(self: "InspectorApp") -> None:
         """Open blob analysis dialog."""
         img = self._get_current_image()
         if img is None:
@@ -566,7 +566,7 @@ class RegionMixin:
     # Domain operations
     # ==================================================================
 
-    def _cmd_reduce_domain(self: "HalconApp"):
+    def _cmd_reduce_domain(self: "InspectorApp"):
         """Restrict current image to the domain of the current region."""
         if self._current_region is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u5efa\u7acb\u5340\u57df (\u95be\u503c\u5206\u5272\u3001Blob \u5206\u6790\u7b49)\u3002")
@@ -576,12 +576,12 @@ class RegionMixin:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
             return
 
-        from dl_anomaly.core.halcon_ops import reduce_domain
+        from dl_anomaly.core.vision_ops import reduce_domain
         result = reduce_domain(img, self._current_region)
         self._add_pipeline_step("\u7e2e\u6e1b\u57df", result)
         self.set_status("\u5b8c\u6210: \u7e2e\u6e1b\u57df (Reduce Domain)")
 
-    def _cmd_crop_domain(self: "HalconApp"):
+    def _cmd_crop_domain(self: "InspectorApp"):
         """Crop current image to the bounding box of the current region."""
         if self._current_region is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u5efa\u7acb\u5340\u57df (\u95be\u503c\u5206\u5272\u3001Blob \u5206\u6790\u7b49)\u3002")
@@ -591,7 +591,7 @@ class RegionMixin:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
             return
 
-        from dl_anomaly.core.halcon_ops import crop_domain
+        from dl_anomaly.core.vision_ops import crop_domain
         result = crop_domain(img, self._current_region)
         self._add_pipeline_step("\u88c1\u5207\u57df", result)
         self.set_status(f"\u5b8c\u6210: \u88c1\u5207\u57df ({result.shape[1]}x{result.shape[0]})")
@@ -600,7 +600,7 @@ class RegionMixin:
     # Region highlight / remove (from properties table click)
     # ==================================================================
 
-    def _on_region_highlight(self: "HalconApp", region_index: int) -> None:
+    def _on_region_highlight(self: "InspectorApp", region_index: int) -> None:
         """Re-render viewer with specific region highlighted in yellow."""
         if self._current_region is None:
             return
@@ -621,7 +621,7 @@ class RegionMixin:
         except Exception:
             pass
 
-    def _on_region_remove(self: "HalconApp", region_index: int) -> None:
+    def _on_region_remove(self: "InspectorApp", region_index: int) -> None:
         """Remove a single region by its 1-based index and add a new pipeline step."""
         if self._current_region is None:
             return

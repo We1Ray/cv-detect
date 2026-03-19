@@ -1,5 +1,5 @@
 """
-gui/region_filter_dialog.py - Interactive HALCON-style select_shape dialog.
+gui/region_filter_dialog.py - Interactive vision-style select_shape dialog.
 
 Filters Region objects by geometric / photometric properties (area,
 circularity, rectangularity, aspect_ratio, mean_value, etc.) with a live

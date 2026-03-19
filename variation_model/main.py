@@ -5,7 +5,7 @@ main.py - Variation Model Inspector 應用程式進入點
 1. 設定 sys.path 以支援模組匯入
 2. 設定日誌系統
 3. 載入組態
-4. 啟動 HALCON HDevelop 風格 GUI 主視窗
+4. 啟動 Industrial Vision 風格 GUI 主視窗
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def main() -> None:
     setup_logging()
 
     logger = logging.getLogger(__name__)
-    logger.info("Variation Model Inspector (HALCON Style) starting...")
+    logger.info("Variation Model Inspector (Vision Style) starting...")
 
     # 3. 顯示啟動畫面（純 tkinter，無重量級 import）
     splash = _show_splash()
@@ -92,13 +92,13 @@ def main() -> None:
     Path(config.results_dir).mkdir(parents=True, exist_ok=True)
 
     # 6. 載入主應用程式（觸發 cv2 / numpy 等重量級 import）
-    from gui.halcon_app import HalconApp
+    from gui.inspector_app import InspectorApp
 
     # 7. 關閉啟動畫面，啟動主視窗
     splash.destroy()
 
-    app = HalconApp(config)
-    logger.info("HALCON-style GUI initialized, entering main loop")
+    app = InspectorApp(config)
+    logger.info("Vision-style GUI initialized, entering main loop")
     app.mainloop()
     logger.info("Application closed")
 

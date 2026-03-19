@@ -174,7 +174,7 @@ def _save_gif(frames: List[np.ndarray], path: Path, duration: int = GIF_DURATION
 def generate_edge_detection_gif(images: List[np.ndarray]) -> Path:
     """Canny / Sobel edge detection on PCB images."""
     log.info("Generating: Edge Detection GIF")
-    from dl_anomaly.core.halcon_ops import edges_canny, sobel_filter
+    from dl_anomaly.core.vision_ops import edges_canny, sobel_filter
 
     frames = []
     for img in images:
@@ -267,7 +267,7 @@ def generate_blob_analysis_gif(images: List[np.ndarray]) -> Path:
 def generate_morphology_gif(images: List[np.ndarray]) -> Path:
     """Morphological open/close/dilate/erode demo."""
     log.info("Generating: Morphology GIF")
-    from dl_anomaly.core.halcon_ops import (
+    from dl_anomaly.core.vision_ops import (
         edges_canny,
     )
 
@@ -642,7 +642,7 @@ def generate_patchcore_gif(images: List[np.ndarray]) -> Path:
 def generate_pipeline_gif(images: List[np.ndarray]) -> Path:
     """Show the full inspection pipeline stages on a single image."""
     log.info("Generating: Pipeline Overview GIF")
-    from dl_anomaly.core.halcon_ops import edges_canny, gauss_filter
+    from dl_anomaly.core.vision_ops import edges_canny, gauss_filter
     from dl_anomaly.core.region_ops import binary_threshold, connection, region_to_display_image
     from shared.core.frequency import compute_fft
 
@@ -801,7 +801,7 @@ def generate_variation_model_gif(images: List[np.ndarray]) -> Path:
 def generate_metrology_gif(images: List[np.ndarray]) -> Path:
     """Sub-pixel measurement demo using edge detection + line fitting."""
     log.info("Generating: Metrology GIF")
-    from dl_anomaly.core.halcon_ops import edges_canny, sobel_filter
+    from dl_anomaly.core.vision_ops import edges_canny, sobel_filter
 
     frames = []
     for img in images[:4]:
@@ -862,13 +862,13 @@ def generate_metrology_gif(images: List[np.ndarray]) -> Path:
 
 
 # ======================================================================
-#  12. HALCON Operations Demo
+#  12. Vision Operations Demo
 # ======================================================================
 
-def generate_halcon_ops_gif(images: List[np.ndarray]) -> Path:
-    """Demo of HALCON-style image operations."""
-    log.info("Generating: HALCON Operations GIF")
-    from dl_anomaly.core.halcon_ops import (
+def generate_vision_ops_gif(images: List[np.ndarray]) -> Path:
+    """Demo of Vision-style image operations."""
+    log.info("Generating: Vision Operations GIF")
+    from dl_anomaly.core.vision_ops import (
         mean_image, gauss_filter, bilateral_filter, sharpen_image,
         emphasize, entropy_image, deviation_image,
         gray_erosion, gray_dilation, top_hat,
@@ -893,11 +893,11 @@ def generate_halcon_ops_gif(images: List[np.ndarray]) -> Path:
     ]
 
     for label, result in ops:
-        f = _add_title_bar(_resize_to_frame(result), "HALCON Ops - 影像運算子")
+        f = _add_title_bar(_resize_to_frame(result), "Vision Ops - 影像運算子")
         f = _add_label(f, label)
         frames.append(f)
 
-    path = GIF_DIR / "12_halcon_ops.gif"
+    path = GIF_DIR / "12_vision_ops.gif"
     _save_gif(frames, path, duration=700)
     return path
 
@@ -909,7 +909,7 @@ def generate_halcon_ops_gif(images: List[np.ndarray]) -> Path:
 def generate_barcode_gif(images: List[np.ndarray]) -> Path:
     """Barcode and QR code detection demo."""
     log.info("Generating: Barcode Detection GIF")
-    from dl_anomaly.core.halcon_ops import find_barcode, find_qrcode
+    from dl_anomaly.core.vision_ops import find_barcode, find_qrcode
 
     frames = []
     for img in images[:4]:
@@ -1049,7 +1049,7 @@ def main():
     # ── Additional tools ──
     log.info("\n--- Additional Tools ---")
     all_gifs.append(generate_metrology_gif(train_images))
-    all_gifs.append(generate_halcon_ops_gif(train_images))
+    all_gifs.append(generate_vision_ops_gif(train_images))
     all_gifs.append(generate_barcode_gif(train_images))
     all_gifs.append(generate_stitching_gif(train_images))
 

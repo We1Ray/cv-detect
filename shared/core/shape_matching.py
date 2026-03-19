@@ -1,7 +1,7 @@
 """
-core/shape_matching.py - Shape-Based Matching (HALCON-style) using OpenCV.
+core/shape_matching.py - Shape-Based Matching (Vision-style) using OpenCV.
 
-Provides gradient-direction-based shape matching modelled after MVTec HALCON's
+Provides gradient-direction-based shape matching modelled after MVTec Vision's
 ``create_shape_model`` / ``find_shape_model`` operators.  The implementation
 relies entirely on OpenCV and NumPy.
 
@@ -267,7 +267,7 @@ def create_shape_model(
     levels so that :func:`find_shape_model` can perform an efficient
     coarse-to-fine search.
 
-    Modelled after HALCON's ``create_shape_model`` operator.
+    Modelled after Vision's ``create_shape_model`` operator.
 
     Parameters:
         template:      Reference image (grayscale or BGR).
@@ -485,7 +485,7 @@ def find_shape_model(
 ) -> List[MatchResult]:
     """Find occurrences of a shape model in a search image.
 
-    Modelled after HALCON's ``find_shape_model`` operator.
+    Modelled after Vision's ``find_shape_model`` operator.
 
     The search proceeds coarse-to-fine through the model's pyramid levels.
     At each level the gradient-direction score is evaluated for a grid of

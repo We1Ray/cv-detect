@@ -1,5 +1,5 @@
 """
-gui/halcon_app.py - HALCON HDevelop 風格主應用程式
+gui/inspector_app.py - Industrial Vision 風格主應用程式
 
 三欄式介面：
 - 左側：管線步驟面板（步驟清單 + 縮圖）
@@ -49,8 +49,8 @@ logger = logging.getLogger(__name__)
 MAX_RECENT_FILES = 10
 
 
-class HalconApp(tk.Tk):
-    """HALCON HDevelop 風格的 Variation Model Inspector 主應用程式。"""
+class InspectorApp(tk.Tk):
+    """Industrial Vision 風格的 Variation Model Inspector 主應用程式。"""
 
     def __init__(self, config: Config) -> None:
         super().__init__()
@@ -65,7 +65,7 @@ class HalconApp(tk.Tk):
         # 最近開啟的檔案
         self._recent_files: List[str] = []
 
-        # HALCON 新功能狀態
+        # 影像處理功能狀態
         self._pixel_inspector = None
         self._script_editor = None
         self._script_editor_visible = False
@@ -75,7 +75,7 @@ class HalconApp(tk.Tk):
         self._app_state = AppState("variation_model")
 
         # ── 視窗設定 ──
-        self.title("Variation Model Inspector - HALCON Style")
+        self.title("Variation Model Inspector - Industrial Vision")
         self.geometry("1400x900")
         self.minsize(1000, 700)
 
@@ -100,7 +100,7 @@ class HalconApp(tk.Tk):
         self._recent_files = self._app_state.get_recent_files()
         self._update_recent_menu()
 
-        logger.info("HALCON 風格 GUI 初始化完成")
+        logger.info("Vision 風格 GUI 初始化完成")
 
     # ================================================================== #
     #  暗色主題樣式                                                        #
@@ -275,140 +275,140 @@ class HalconApp(tk.Tk):
         region_menu.add_command(label="Blob 分析...", command=self._open_blob_analysis)
         menubar.add_cascade(label="區域", menu=region_menu)
 
-        # ── HALCON ──
-        halcon_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        # ── 影像處理 ──
+        vision_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                               activebackground="#0078d4", activeforeground="#ffffff")
 
         # 濾波子選單
-        filter_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        filter_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                               activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("均值濾波", "mean_image"), ("中值濾波", "median_image"),
                           ("高斯濾波", "gauss_filter"), ("高斯模糊", "gauss_blur"),
                           ("雙邊濾波", "bilateral_filter"),
                           ("銳化", "sharpen_image"), ("強調", "emphasize"),
                           ("Laplacian", "laplace_filter")]:
-            filter_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="濾波", menu=filter_menu)
+            filter_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="濾波", menu=filter_menu)
 
         # 邊緣子選單
-        edge_menu2 = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        edge_menu2 = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                              activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("Canny", "edges_canny"), ("Sobel", "sobel_filter"), ("Prewitt", "prewitt_filter")]:
-            edge_menu2.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="邊緣", menu=edge_menu2)
+            edge_menu2.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="邊緣", menu=edge_menu2)
 
         # 形態學子選單
-        morph_menu2 = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        morph_menu2 = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                               activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("灰度侵蝕", "gray_erosion"), ("灰度膨脹", "gray_dilation"),
                           ("灰度開運算", "gray_opening"), ("灰度閉運算", "gray_closing"),
                           ("灰度開運算 (形狀)", "gray_opening_shape"),
                           ("灰度閉運算 (形狀)", "gray_closing_shape"),
                           ("Top-hat", "top_hat"), ("Bottom-hat", "bottom_hat")]:
-            morph_menu2.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
+            morph_menu2.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
         morph_menu2.add_separator()
-        morph_menu2.add_command(label="動態閾值分割", command=lambda: self._apply_halcon_op("dyn_threshold"))
-        morph_menu2.add_command(label="可變閾值", command=lambda: self._apply_halcon_op("var_threshold"))
-        morph_menu2.add_command(label="局部閾值", command=lambda: self._apply_halcon_op("local_threshold"))
-        halcon_menu.add_cascade(label="形態學", menu=morph_menu2)
+        morph_menu2.add_command(label="動態閾值分割", command=lambda: self._apply_vision_op("dyn_threshold"))
+        morph_menu2.add_command(label="可變閾值", command=lambda: self._apply_vision_op("var_threshold"))
+        morph_menu2.add_command(label="局部閾值", command=lambda: self._apply_vision_op("local_threshold"))
+        vision_menu.add_cascade(label="形態學", menu=morph_menu2)
 
         # 幾何子選單
-        geom_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        geom_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                             activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("旋轉 90°", "rotate_90"), ("旋轉 180°", "rotate_180"),
                           ("旋轉 270°", "rotate_270"),
                           ("水平鏡像", "mirror_h"), ("垂直鏡像", "mirror_v"),
                           ("縮放 50%", "zoom_50"), ("縮放 200%", "zoom_200")]:
-            geom_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="幾何", menu=geom_menu)
+            geom_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="幾何", menu=geom_menu)
 
         # 色彩子選單
-        color_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        color_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                              activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("轉灰階", "rgb_to_gray"), ("轉 HSV", "rgb_to_hsv"),
                           ("轉 HLS", "rgb_to_hls"),
-                          ("直方圖均衡", "histogram_eq_halcon"),
+                          ("直方圖均衡", "histogram_eq_vision"),
                           ("反色", "invert_image"), ("光照校正", "illuminate"),
                           ("通道分離", "decompose3")]:
-            color_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
+            color_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
         color_menu.add_separator()
-        color_menu.add_command(label="CLAHE", command=lambda: self._apply_halcon_op("clahe"))
-        halcon_menu.add_cascade(label="色彩", menu=color_menu)
+        color_menu.add_command(label="CLAHE", command=lambda: self._apply_vision_op("clahe"))
+        vision_menu.add_cascade(label="色彩", menu=color_menu)
 
         # 算術子選單
-        arith_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        arith_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                              activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("絕對值", "abs_image"), ("反色", "invert_image"),
                           ("亮度 +30", "bright_up"), ("亮度 -30", "bright_down"),
                           ("對比度增強", "contrast_up"), ("絕對差分", "abs_diff_image")]:
-            arith_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="算術", menu=arith_menu)
+            arith_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="算術", menu=arith_menu)
 
         # 紋理子選單
-        texture_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        texture_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                                activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("熵影像", "entropy_image"), ("標準差影像", "deviation_image"),
                           ("局部最小", "local_min"), ("局部最大", "local_max"),
                           ("Laws 紋理", "texture_laws"), ("平均曲率", "mean_curvature")]:
-            texture_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="紋理", menu=texture_menu)
+            texture_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="紋理", menu=texture_menu)
 
         # 條碼子選單
-        barcode_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        barcode_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                                activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("條碼偵測", "find_barcode"), ("QR Code", "find_qrcode"),
                           ("DataMatrix", "find_datamatrix")]:
-            barcode_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="條碼", menu=barcode_menu)
+            barcode_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="條碼", menu=barcode_menu)
 
         # 灰度變換
-        gray_trans_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        gray_trans_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                                   activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("對數變換", "log_image"), ("指數變換", "exp_image"),
                           ("Gamma 校正", "gamma_image")]:
-            gray_trans_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="灰度變換", menu=gray_trans_menu)
+            gray_trans_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="灰度變換", menu=gray_trans_menu)
 
         # 頻域處理
-        freq_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        freq_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                             activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("FFT 頻譜", "fft_image"),
                           ("低通濾波", "freq_filter_lowpass"),
                           ("高通濾波", "freq_filter_highpass")]:
-            freq_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="頻域處理", menu=freq_menu)
+            freq_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="頻域處理", menu=freq_menu)
 
         # 分割
-        seg_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        seg_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                            activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("分水嶺", "watersheds"), ("距離變換", "distance_transform"),
                           ("骨架化", "skeleton")]:
-            seg_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="分割", menu=seg_menu)
+            seg_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="分割", menu=seg_menu)
 
         # 特徵點
-        feat_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        feat_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                             activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("Harris 角點", "points_harris"), ("Shi-Tomasi 特徵點", "points_shi_tomasi")]:
-            feat_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="特徵點", menu=feat_menu)
+            feat_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="特徵點", menu=feat_menu)
 
         # 直線/圓偵測
-        hough_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        hough_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                              activebackground="#0078d4", activeforeground="#ffffff")
         for label, op in [("Hough 直線", "hough_lines"), ("Hough 圓", "hough_circles")]:
-            hough_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="直線/圓偵測", menu=hough_menu)
+            hough_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="直線/圓偵測", menu=hough_menu)
 
         # 相機
-        camera_menu = tk.Menu(halcon_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
+        camera_menu = tk.Menu(vision_menu, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                               activebackground="#0078d4", activeforeground="#ffffff")
-        camera_menu.add_command(label="擷取影像", command=lambda: self._apply_halcon_op("grab_image"))
-        halcon_menu.add_cascade(label="相機", menu=camera_menu)
+        camera_menu.add_command(label="擷取影像", command=lambda: self._apply_vision_op("grab_image"))
+        vision_menu.add_cascade(label="相機", menu=camera_menu)
 
-        halcon_menu.add_separator()
-        halcon_menu.add_command(label="腳本編輯器", command=self._toggle_script_editor, accelerator="F8")
-        menubar.add_cascade(label="HALCON", menu=halcon_menu)
+        vision_menu.add_separator()
+        vision_menu.add_command(label="腳本編輯器", command=self._toggle_script_editor, accelerator="F8")
+        menubar.add_cascade(label="影像處理", menu=vision_menu)
 
         # ── 模型 ──
         model_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
@@ -1326,10 +1326,10 @@ class HalconApp(tk.Tk):
         messagebox.showinfo(
             "關於",
             "Variation Model Inspector\n"
-            "HALCON HDevelop Style\n\n"
+            "Industrial Vision Style\n\n"
             "基於統計變異模型的瑕疵檢測系統\n"
             "使用 Welford 線上演算法計算影像統計量\n\n"
-            "介面風格：HALCON HDevelop\n"
+            "介面風格：Industrial Vision\n"
             "Framework: tkinter + OpenCV",
         )
 
@@ -1368,7 +1368,7 @@ class HalconApp(tk.Tk):
         SettingsDialog(self, self.config, on_apply=on_settings_applied)
 
     # ================================================================== #
-    #  HALCON 區域操作                                                     #
+    #  影像處理區域操作                                                     #
     # ================================================================== #
 
     def _get_current_image(self) -> Optional[np.ndarray]:
@@ -1662,11 +1662,11 @@ class HalconApp(tk.Tk):
             self._show_error("Blob 分析", exc)
 
     # ================================================================== #
-    #  HALCON 運算子操作                                                   #
+    #  影像處理運算子操作                                                   #
     # ================================================================== #
 
-    def _apply_halcon_op(self, op: str) -> None:
-        """套用 HALCON 運算子。"""
+    def _apply_vision_op(self, op: str) -> None:
+        """套用影像處理運算子。"""
         img = self._get_current_image()
         if img is None:
             messagebox.showwarning("警告", "請先載入影像。")
@@ -1676,7 +1676,7 @@ class HalconApp(tk.Tk):
         name = ""
 
         try:
-            from core import halcon_ops as hops
+            from core import vision_ops as hops
 
             if op == "mean_image":
                 result = hops.mean_image(img, 5)
@@ -1753,7 +1753,7 @@ class HalconApp(tk.Tk):
             elif op == "rgb_to_hsv":
                 result = hops.rgb_to_hsv(img)
                 name = "轉 HSV"
-            elif op == "histogram_eq_halcon":
+            elif op == "histogram_eq_vision":
                 result = hops.histogram_eq(img)
                 name = "直方圖均衡"
             elif op == "invert_image":
@@ -1930,17 +1930,17 @@ class HalconApp(tk.Tk):
                 result = ch0  # Show first channel
                 name = "通道分離 (Ch0)"
             else:
-                messagebox.showwarning("警告", f"未知的 HALCON 運算子: {op}")
+                messagebox.showwarning("警告", f"未知的影像處理運算子: {op}")
                 return
 
             if result is not None:
-                self.pipeline_panel.add_step(name, result, "halcon")
-                self.set_status_success(f"HALCON: {name}")
-                self._history_panel.add_entry("HALCON", name)
+                self.pipeline_panel.add_step(name, result, "vision")
+                self.set_status_success(f"影像處理: {name}")
+                self._history_panel.add_entry("影像處理", name)
 
         except Exception as exc:
-            logger.exception("HALCON 運算子失敗: %s", op)
-            self._show_error(f"HALCON 運算子 [{op}]", exc)
+            logger.exception("影像處理運算子失敗: %s", op)
+            self._show_error(f"影像處理運算子 [{op}]", exc)
 
     # ================================================================== #
     #  腳本編輯器                                                          #

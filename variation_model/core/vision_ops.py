@@ -1,8 +1,8 @@
 """
-core/halcon_ops.py - Comprehensive HALCON-style operator library using OpenCV.
+core/vision_ops.py - Comprehensive Vision-style operator library using OpenCV.
 
 Provides a wide range of image processing operations modelled after
-MVTec HALCON operators, fully implemented on top of OpenCV and NumPy.
+industrial vision operators, fully implemented on top of OpenCV and NumPy.
 
 Categories:
     1.  Image Arithmetic

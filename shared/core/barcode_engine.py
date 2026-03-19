@@ -2,7 +2,7 @@
 core/barcode_engine.py - Enhanced barcode / QR code detection with quality grading.
 
 Extends the basic ``find_barcode`` / ``find_qrcode`` helpers in
-``halcon_ops.py`` with structured result types, multi-decoder support,
+``vision_ops.py`` with structured result types, multi-decoder support,
 simplified ISO 15416 / 15415 quality grading, and visualisation helpers.
 
 Categories:

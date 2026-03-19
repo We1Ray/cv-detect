@@ -27,7 +27,7 @@ def write_cover_and_toc(p):
     p.cell(0, 6, "涵蓋：影像前處理、相機校正、光源選型、色彩檢測、Blob 分析、", align="C", new_x="LMARGIN", new_y="NEXT")
     p.cell(0, 6, "邊緣檢測、頻率域、深度學習、3D 檢測、即時優化、25 章完整指南", align="C", new_x="LMARGIN", new_y="NEXT")
     p.ln(8)
-    p.cell(0, 5, "參考：CSDN Halcon 瑕疵檢測系列 / PCB 形態學檢測方法", align="C", new_x="LMARGIN", new_y="NEXT")
+    p.cell(0, 5, "參考：CSDN 工業視覺瑕疵檢測系列 / PCB 形態學檢測方法", align="C", new_x="LMARGIN", new_y="NEXT")
 
     # TOC
     p.add_page()

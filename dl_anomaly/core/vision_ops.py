@@ -1,8 +1,8 @@
 """
-core/halcon_ops.py - Comprehensive HALCON-style operator library using OpenCV.
+core/vision_ops.py - Comprehensive Industrial Vision operator library using OpenCV.
 
 Provides a wide range of image processing operations modelled after
-MVTec HALCON operators, fully implemented on top of OpenCV and NumPy.
+industrial vision operators, fully implemented on top of OpenCV and NumPy.
 
 Categories:
     1.  Image Arithmetic
@@ -267,7 +267,7 @@ def _extract_mask(region) -> np.ndarray:
     """Extract a binary uint8 mask from either Region class.
 
     Supports:
-    - ``halcon_ops.Region`` (has ``.mask``).
+    - ``vision_ops.Region`` (has ``.mask``).
     - ``core.region.Region`` (has ``.to_binary_mask()`` or ``.labels``).
     """
     if hasattr(region, "mask") and region.mask is not None:
@@ -287,7 +287,7 @@ def reduce_domain(
     """Restrict an image to the domain defined by *region*.
 
     Pixels outside the region are set to *fill_value*.  Analogous to
-    HALCON ``reduce_domain``.
+    Vision ``reduce_domain``.
 
     Args:
         img:        Source image (any number of channels).
@@ -311,7 +311,7 @@ def reduce_domain(
 def crop_domain(img: np.ndarray, region) -> np.ndarray:
     """Crop an image to the bounding box of *region*.
 
-    Analogous to HALCON ``crop_domain``.
+    Analogous to Vision ``crop_domain``.
 
     Returns:
         Cropped image containing only the bounding-box area.
@@ -570,7 +570,7 @@ def gray_opening_shape(
 ) -> np.ndarray:
     """Gray opening with configurable kernel size and shape.
 
-    Equivalent to HALCON ``gray_opening_shape``.
+    Equivalent to Vision ``gray_opening_shape``.
     """
     gray = _ensure_gray(img)
     kernel = _morph_kernel(max(kw, kh), shape)
@@ -582,7 +582,7 @@ def gray_closing_shape(
 ) -> np.ndarray:
     """Gray closing with configurable kernel size and shape.
 
-    Equivalent to HALCON ``gray_closing_shape``.
+    Equivalent to Vision ``gray_closing_shape``.
     """
     gray = _ensure_gray(img)
     kernel = _morph_kernel(max(kw, kh), shape)
@@ -649,7 +649,7 @@ def var_threshold(
     """Variable threshold segmentation for uneven illumination.
 
     Uses local mean and local standard deviation to compute per-pixel
-    thresholds, similar to HALCON ``var_threshold``.
+    thresholds, similar to Vision ``var_threshold``.
 
     For ``light_dark='dark'``:
         pixel is foreground if ``pixel < local_mean - std_mult * local_std``

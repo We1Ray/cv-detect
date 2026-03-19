@@ -1,5 +1,5 @@
 """
-gui/toolbar.py - HALCON HDevelop 風格工具列
+gui/toolbar.py - Industrial Vision 風格工具列
 
 提供快速操作按鈕：
 - 開啟 / 儲存影像
@@ -18,7 +18,7 @@ from typing import Callable, Dict, Optional
 
 
 class Toolbar(ttk.Frame):
-    """HALCON HDevelop 風格工具列。"""
+    """Industrial Vision 風格工具列。"""
 
     def __init__(
         self,
@@ -69,7 +69,7 @@ class Toolbar(ttk.Frame):
 
         self._add_separator()
 
-        # ── HALCON 工具 ──
+        # ── 影像處理 工具 ──
         self._add_separator()
 
         self._pixel_inspector_var = tk.BooleanVar(value=False)

@@ -1,4 +1,4 @@
-"""Main HALCON HDevelop-style application window.
+"""Main Industrial Vision-style application window.
 
 Assembles the full layout:
 - Menu bar
@@ -14,7 +14,7 @@ Method groups are split into mixin classes for maintainability:
 - ImageOpsMixin    (mixins_image_ops.py)  -- file I/O, pipeline, model, inspection, DL ops, recipes, help
 - DialogMixin      (mixins_dialogs.py)    -- dialog-opening methods
 - RegionMixin      (mixins_region.py)     -- region / morphology operations
-- HalconOpsMixin   (mixins_halcon.py)     -- HALCON operators, filter dialogs
+- VisionOpsMixin   (mixins_vision.py)     -- Vision operators, filter dialogs
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ from dl_anomaly.gui.mixins_menu import MenuMixin
 from dl_anomaly.gui.mixins_image_ops import ImageOpsMixin
 from dl_anomaly.gui.mixins_dialogs import DialogMixin
 from dl_anomaly.gui.mixins_region import RegionMixin
-from dl_anomaly.gui.mixins_halcon import HalconOpsMixin
+from dl_anomaly.gui.mixins_vision import VisionOpsMixin
 from dl_anomaly.gui.mixins_vm_ops import VMOpsMixin
 from dl_anomaly.gui.platform_keys import (
     IS_MAC, bind_mod, bind_mod_shift,
@@ -70,16 +70,16 @@ from dl_anomaly.gui.platform_keys import (
 logger = logging.getLogger(__name__)
 
 
-class HalconApp(
+class InspectorApp(
     MenuMixin,
     ImageOpsMixin,
     DialogMixin,
     RegionMixin,
-    HalconOpsMixin,
+    VisionOpsMixin,
     VMOpsMixin,
     tk.Tk,
 ):
-    """Top-level HALCON HDevelop-style application window."""
+    """Top-level Industrial Vision-style application window."""
 
     def __init__(self, config: Config) -> None:
         super().__init__()
@@ -106,7 +106,7 @@ class HalconApp(
         self._redo_stack: List[int] = []
         self._initial_loaded: bool = False  # True after first image load
 
-        # HALCON feature state
+        # Vision feature state
         self._pixel_inspector = None
         self._script_editor = None
         self._script_editor_visible = False

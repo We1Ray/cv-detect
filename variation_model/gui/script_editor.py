@@ -1,10 +1,10 @@
 """
-gui/script_editor.py - HALCON HDevelop-style script editor panel with safe AST-based interpreter.
+gui/script_editor.py - Industrial Vision-style script editor panel with safe AST-based interpreter.
 
 Provides:
 - ScriptInterpreter: A safe AST-based interpreter that walks Python AST nodes without
   ever calling eval() or exec(). Supports a DSL of image-processing functions mirroring
-  HALCON operators, with variable assignment, control flow, f-strings, and user-defined
+  Vision operators, with variable assignment, control flow, f-strings, and user-defined
   functions.
 - ScriptEditor(ttk.Frame): A toggleable panel with a code editor (left pane), output
   console (right pane), toolbar, line numbers, and real-time syntax highlighting.
@@ -120,14 +120,14 @@ class ScriptInterpreter:
     The interpreter receives a reference to the main application (``app``)
     and an optional dict of extra callable functions.  It builds an internal
     registry of whitelisted DSL functions (image I/O, region operations,
-    halcon operators, drawing, measurement, barcode, built-in helpers) and
+    vision operators, drawing, measurement, barcode, built-in helpers) and
     stores script variables in a flat dict.  Output from ``print()`` calls
     is captured into an internal list.
 
     Parameters
     ----------
     app : object or None
-        The main HalconApp instance.  Used to obtain the current image
+        The main InspectorApp instance.  Used to obtain the current image
         (``app.pipeline_panel``) and to push results back into the viewer
         (``app.image_viewer``, ``app.pipeline_panel``).
     extra_functions : dict or None
@@ -212,8 +212,8 @@ class ScriptInterpreter:
         b["inner_circle"] = self._fn_inner_circle
         b["region_to_display_image"] = self._fn_region_to_display_image
 
-        # -- halcon_ops wrappers (image processing) --
-        halcon_funcs = [
+        # -- vision_ops wrappers (image processing) --
+        vision_funcs = [
             "rgb_to_gray", "gauss_filter", "mean_image", "median_image",
             "sharpen_image", "edges_canny", "sobel_filter", "laplace_filter",
             "invert_image", "add_image", "sub_image", "rotate_image",
@@ -224,8 +224,8 @@ class ScriptInterpreter:
             "draw_circle", "draw_cross", "draw_arrow",
             "find_barcode", "find_qrcode",
         ]
-        for name in halcon_funcs:
-            b[name] = self._make_halcon_wrapper(name)
+        for name in vision_funcs:
+            b[name] = self._make_vision_wrapper(name)
 
         # -- Safe Python built-ins --
         b["len"] = len
@@ -258,24 +258,24 @@ class ScriptInterpreter:
         return b
 
     # ------------------------------------------------------------------ #
-    #  halcon_ops generic wrapper factory                                  #
+    #  vision_ops generic wrapper factory                                  #
     # ------------------------------------------------------------------ #
 
-    def _make_halcon_wrapper(self, func_name: str) -> Callable:
-        """Create a lazy wrapper that imports from core.halcon_ops at call time."""
+    def _make_vision_wrapper(self, func_name: str) -> Callable:
+        """Create a lazy wrapper that imports from core.vision_ops at call time."""
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
-                import core.halcon_ops as halcon_ops
+                import core.vision_ops as vision_ops
             except ImportError:
                 raise ScriptError(
-                    f"core.halcon_ops 模組未安裝，無法呼叫 {func_name}()",
+                    f"core.vision_ops 模組未安裝，無法呼叫 {func_name}()",
                     line=self._get_current_line(),
                 )
-            fn = getattr(halcon_ops, func_name, None)
+            fn = getattr(vision_ops, func_name, None)
             if fn is None:
                 raise ScriptError(
-                    f"core.halcon_ops 中找不到函式 {func_name}()",
+                    f"core.vision_ops 中找不到函式 {func_name}()",
                     line=self._get_current_line(),
                 )
             return fn(*args, **kwargs)
@@ -1282,7 +1282,7 @@ _BUILTINS = [
     "complement_region", "count_obj", "region_to_mask", "sort_region",
     "get_single_region", "area_center", "smallest_rectangle1",
     "smallest_circle", "inner_circle", "region_to_display_image",
-    # halcon_ops
+    # vision_ops
     "rgb_to_gray", "gauss_filter", "mean_image", "median_image",
     "sharpen_image", "edges_canny", "sobel_filter", "laplace_filter",
     "invert_image", "add_image", "sub_image", "rotate_image",
@@ -1302,7 +1302,7 @@ _BUILTINS = [
 
 
 class ScriptEditor(ttk.Frame):
-    """HALCON HDevelop-style script editor panel.
+    """Industrial Vision-style script editor panel.
 
     Embeddable in the main application.  Provides a horizontal PanedWindow
     with a code editor (left) and output console (right), a toolbar across
@@ -1313,7 +1313,7 @@ class ScriptEditor(ttk.Frame):
     master : tk.Widget
         Parent widget.
     app : object or None
-        The main HalconApp instance, used to obtain the current image and
+        The main InspectorApp instance, used to obtain the current image and
         to push script results into the pipeline panel / image viewer.
     """
 

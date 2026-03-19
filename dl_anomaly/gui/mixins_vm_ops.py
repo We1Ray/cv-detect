@@ -1,4 +1,4 @@
-"""Variation Model operations mixin for HalconApp.
+"""Variation Model operations mixin for InspectorApp.
 
 Provides VM-specific training, inspection, model management, and
 threshold recalculation capabilities integrated into the unified app.
@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 
 if TYPE_CHECKING:
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class VMOpsMixin:
     # VM helper: centralised VMConfig access
     # ==================================================================
 
-    def _get_vm_config(self: "HalconApp") -> "VMConfig":
+    def _get_vm_config(self: "InspectorApp") -> "VMConfig":
         """Return a VMConfig loaded from .env (cached per call)."""
         from dl_anomaly.core.vm_config import VMConfig
         return VMConfig.from_env()
@@ -36,7 +36,7 @@ class VMOpsMixin:
     # VM Model commands
     # ==================================================================
 
-    def _cmd_vm_train(self: "HalconApp") -> None:
+    def _cmd_vm_train(self: "InspectorApp") -> None:
         """Train a new Variation Model from a directory of good images."""
         d = filedialog.askdirectory(title="選擇訓練影像目錄 (良品)")
         if not d:
@@ -87,7 +87,7 @@ class VMOpsMixin:
         self._run_in_bg(_compute, on_done=_done, on_error=_error,
                         status_msg="VM 訓練中...")
 
-    def _cmd_vm_load_model(self: "HalconApp") -> None:
+    def _cmd_vm_load_model(self: "InspectorApp") -> None:
         """Load a saved Variation Model (.npz)."""
         path = filedialog.askopenfilename(
             title="載入 Variation Model",
@@ -111,7 +111,7 @@ class VMOpsMixin:
         except Exception as exc:
             self._show_error("VM 模型載入失敗", exc)
 
-    def _cmd_vm_save_model(self: "HalconApp") -> None:
+    def _cmd_vm_save_model(self: "InspectorApp") -> None:
         """Save the current Variation Model to .npz."""
         if self._vm_model is None or not self._vm_model.is_trained:
             messagebox.showinfo("資訊", "沒有已訓練的 Variation Model 可以儲存。")
@@ -131,7 +131,7 @@ class VMOpsMixin:
         except Exception as exc:
             self._show_error("VM 模型儲存失敗", exc)
 
-    def _cmd_vm_model_info(self: "HalconApp") -> None:
+    def _cmd_vm_model_info(self: "InspectorApp") -> None:
         """Show Variation Model information."""
         if self._vm_model is None:
             messagebox.showinfo("資訊", "尚未載入 Variation Model。")
@@ -155,7 +155,7 @@ class VMOpsMixin:
 
         messagebox.showinfo("VM 模型資訊", info)
 
-    def _cmd_vm_reprepare_thresholds(self: "HalconApp") -> None:
+    def _cmd_vm_reprepare_thresholds(self: "InspectorApp") -> None:
         """Recalculate VM thresholds with current parameters."""
         if self._vm_model is None or not self._vm_model.is_trained:
             messagebox.showinfo("資訊", "沒有已訓練的 Variation Model。")
@@ -173,7 +173,7 @@ class VMOpsMixin:
     # VM Inspection commands
     # ==================================================================
 
-    def _cmd_vm_inspect_single(self: "HalconApp") -> None:
+    def _cmd_vm_inspect_single(self: "InspectorApp") -> None:
         """Run VM inspection on the current or selected image."""
         if self._vm_model is None or not self._vm_model.is_trained:
             messagebox.showinfo("資訊", "請先載入或訓練 Variation Model。")
@@ -242,7 +242,7 @@ class VMOpsMixin:
                         status_msg=f"VM 檢測中: {inspect_path.name}")
 
     def _vm_display_result(
-        self: "HalconApp", result, processed, overlay, heatmap, image_path
+        self: "InspectorApp", result, processed, overlay, heatmap, image_path
     ) -> None:
         """Display VM inspection results in the pipeline."""
         name = image_path.stem
@@ -271,7 +271,7 @@ class VMOpsMixin:
             message=f"VM 瑕疵數: {result.num_defects}",
         )
 
-    def _cmd_vm_inspect_batch(self: "HalconApp") -> None:
+    def _cmd_vm_inspect_batch(self: "InspectorApp") -> None:
         """Run VM batch inspection on a directory."""
         if self._vm_model is None or not self._vm_model.is_trained:
             messagebox.showinfo("資訊", "請先載入或訓練 Variation Model。")
@@ -325,7 +325,7 @@ class VMOpsMixin:
         self._run_in_bg(_compute, on_done=_done, on_error=_error,
                         status_msg="VM 批次檢測中...")
 
-    def _cmd_vm_show_threshold_viz(self: "HalconApp") -> None:
+    def _cmd_vm_show_threshold_viz(self: "InspectorApp") -> None:
         """Show the VM model's threshold visualization (mean/std/upper/lower)."""
         if self._vm_model is None or not self._vm_model.is_trained:
             messagebox.showinfo("資訊", "請先載入或訓練 Variation Model。")

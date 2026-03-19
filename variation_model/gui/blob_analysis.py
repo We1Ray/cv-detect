@@ -1,5 +1,5 @@
 """
-gui/blob_analysis.py - HALCON-style Blob Analysis dialog.
+gui/blob_analysis.py - Vision-style Blob Analysis dialog.
 
 Provides a complete image processing pipeline dialog for industrial defect
 detection.  The pipeline executes the following steps when the user clicks
@@ -59,7 +59,7 @@ _CANVAS_BG = "#1e1e1e"
 # ======================================================================== #
 
 class BlobAnalysisDialog(tk.Toplevel):
-    """HALCON-style Blob Analysis dialog.
+    """Vision-style Blob Analysis dialog.
 
     Parameters
     ----------

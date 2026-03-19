@@ -1,4 +1,4 @@
-"""Region data structures for HALCON-style region operations.
+"""Region data structures for Vision-style region operations.
 
 Provides Region and RegionProperties dataclasses that model labeled
 connected-component regions with rich geometric and photometric properties.
@@ -58,7 +58,7 @@ class RegionProperties:
 
 @dataclass
 class Region:
-    """A labeled region set, analogous to HALCON's Region concept.
+    """A labeled region set, analogous to Vision's Region concept.
 
     ``labels`` is an int32 ndarray of shape (H, W) where 0 represents the
     background and values 1..N identify distinct connected regions.

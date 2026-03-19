@@ -1,7 +1,7 @@
 """
 core/calibration.py - Camera calibration and pixel-to-world coordinate mapping.
 
-Wraps OpenCV calibration APIs with a HALCON-style interface for industrial
+Wraps OpenCV calibration APIs with a Vision-style interface for industrial
 measurement pipelines.  Supports full camera calibration from chessboard or
 circle-grid patterns, as well as simplified pixel-to-mm mapping when a full
 calibration is not required.

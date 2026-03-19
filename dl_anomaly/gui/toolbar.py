@@ -1,4 +1,4 @@
-"""Top toolbar with HALCON HDevelop-style action buttons.
+"""Top toolbar with Industrial Vision-style action buttons.
 
 Uses Unicode symbols for icons. All buttons dispatch to callback functions
 provided by the main application.
@@ -71,7 +71,7 @@ class Toolbar(ttk.Frame):
         self._add_button("\U0001F4CB", "batch", "\u6279\u6b21\u6aa2\u6e2c")  # Batch
         self._add_sep()
 
-        # ---- HALCON tools ----
+        # ---- Vision tools ----
         self._add_group_label("\u5de5\u5177")
         self._add_toggle("\u25C8", "toggle_pixel_inspector", f"\u50cf\u7d20\u6aa2\u67e5\u5668 ({display('I')})")  # Pixel Inspector
         self._add_button("\u25A7", "threshold", f"\u95be\u503c\u5206\u5272 ({display('T')})")  # Threshold

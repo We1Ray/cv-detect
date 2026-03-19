@@ -2,7 +2,7 @@
 gui/pixel_inspector.py - Floating pixel value inspector window.
 
 Provides an NxN grid of pixel values around the cursor position,
-similar to HALCON's gray value inspection tool. Non-modal, stays on top.
+similar to Vision gray value inspection tools. Non-modal, stays on top.
 """
 
 from __future__ import annotations

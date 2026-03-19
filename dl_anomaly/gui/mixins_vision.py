@@ -1,7 +1,7 @@
-"""HALCON operator mixin for HalconApp.
+"""Vision operator mixin for InspectorApp.
 
 Covers: reusable parameter dialog helper, filter dialog helper,
-all _dlg_* filter dialog launchers, _apply_halcon_op, _halcon_op_compute.
+all _dlg_* filter dialog launchers, _apply_vision_op, _vision_op_compute.
 """
 
 from __future__ import annotations
@@ -14,17 +14,17 @@ import cv2
 import numpy as np
 
 if TYPE_CHECKING:
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
 
-class HalconOpsMixin:
-    """HALCON-specific operators, parameter dialogs, and filter dialogs."""
+class VisionOpsMixin:
+    """Vision-specific operators, parameter dialogs, and filter dialogs."""
 
     # ==================================================================
     # Reusable parameter dialog helper
     # ==================================================================
 
-    def _open_param_dialog(self: "HalconApp", title, params, on_apply):
+    def _open_param_dialog(self: "InspectorApp", title, params, on_apply):
         """Build a dark-themed parameter dialog from a specification list.
 
         Parameters
@@ -95,10 +95,10 @@ class HalconOpsMixin:
         dlg.geometry(f"+{x}+{y}")
 
     # ==================================================================
-    # Parameterized HALCON filter dialogs
+    # Parameterized vision filter dialogs
     # ==================================================================
 
-    def _open_filter_dialog(self: "HalconApp", op_label, params, apply_func):
+    def _open_filter_dialog(self: "InspectorApp", op_label, params, apply_func):
         """Open a parameter dialog for a filter operation.
 
         Parameters
@@ -134,20 +134,20 @@ class HalconOpsMixin:
     # Individual filter dialog launchers
     # ------------------------------------------------------------------
 
-    def _dlg_mean_image(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_mean_image(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u5747\u503c\u6ffe\u6ce2", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
         ], lambda img, p: hops.mean_image(img, p["ksize"]))
 
-    def _dlg_median_image(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_median_image(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u4e2d\u503c\u6ffe\u6ce2", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
         ], lambda img, p: hops.median_image(img, p["ksize"]))
 
-    def _dlg_gauss_blur(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gauss_blur(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u9ad8\u65af\u6a21\u7cca", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
             {"label": "Sigma:", "key": "sigma", "type": "float", "default": 0},
@@ -156,100 +156,100 @@ class HalconOpsMixin:
             else hops.gauss_filter(img, p["sigma"])
         ))
 
-    def _dlg_bilateral_filter(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_bilateral_filter(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u96d9\u908a\u6ffe\u6ce2", [
             {"label": "d:", "key": "d", "type": "int", "default": 9},
             {"label": "Sigma Color:", "key": "sigma_color", "type": "float", "default": 75},
             {"label": "Sigma Space:", "key": "sigma_space", "type": "float", "default": 75},
         ], lambda img, p: hops.bilateral_filter(img, p["d"], p["sigma_color"], p["sigma_space"]))
 
-    def _dlg_sharpen(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_sharpen(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u92b3\u5316", [
             {"label": "\u5f37\u5ea6 (amount):", "key": "amount", "type": "float", "default": 0.5},
         ], lambda img, p: hops.sharpen_image(img, p["amount"]))
 
-    def _dlg_canny(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_canny(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Canny \u908a\u7de3", [
             {"label": "\u4f4e\u95be\u503c (low):", "key": "low", "type": "float", "default": 50},
             {"label": "\u9ad8\u95be\u503c (high):", "key": "high", "type": "float", "default": 150},
             {"label": "Sigma:", "key": "sigma", "type": "float", "default": 1.0},
         ], lambda img, p: hops.edges_canny(img, p["low"], p["high"], p["sigma"]))
 
-    def _dlg_gray_erosion(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gray_erosion(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u7070\u5ea6\u4fb5\u8755", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
         ], lambda img, p: hops.gray_erosion(img, p["ksize"]))
 
-    def _dlg_gray_dilation(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gray_dilation(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u7070\u5ea6\u81a8\u8139", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
         ], lambda img, p: hops.gray_dilation(img, p["ksize"]))
 
-    def _dlg_gray_opening(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gray_opening(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u7070\u5ea6\u958b\u904b\u7b97", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
         ], lambda img, p: hops.gray_opening(img, p["ksize"]))
 
-    def _dlg_gray_closing(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gray_closing(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u7070\u5ea6\u9589\u904b\u7b97", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 5},
         ], lambda img, p: hops.gray_closing(img, p["ksize"]))
 
-    def _dlg_top_hat(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_top_hat(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Top-hat", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 9},
         ], lambda img, p: hops.top_hat(img, p["ksize"]))
 
-    def _dlg_bottom_hat(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_bottom_hat(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Bottom-hat", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 9},
         ], lambda img, p: hops.bottom_hat(img, p["ksize"]))
 
-    def _dlg_emphasize(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_emphasize(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u5f37\u8abf", [
             {"label": "\u6838\u5927\u5c0f (ksize):", "key": "ksize", "type": "int", "default": 7},
             {"label": "\u5f37\u5ea6 (factor):", "key": "factor", "type": "float", "default": 1.5},
         ], lambda img, p: hops.emphasize(img, p["ksize"], p["factor"]))
 
-    def _dlg_scale_image(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_scale_image(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u4eae\u5ea6/\u5c0d\u6bd4\u5ea6\u8abf\u6574", [
             {"label": "\u4e58\u6578 (mult):", "key": "mult", "type": "float", "default": 1.0},
             {"label": "\u504f\u79fb (add):", "key": "add", "type": "float", "default": 0},
         ], lambda img, p: hops.scale_image(img, p["mult"], p["add"]))
 
-    def _dlg_log_image(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_log_image(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u5c0d\u6578\u8b8a\u63db", [
             {"label": "\u5e95\u6578 (base):", "key": "base", "type": "combo",
              "default": "e", "values": ["e", "2", "10"]},
         ], lambda img, p: hops.log_image(img, p["base"]))
 
-    def _dlg_exp_image(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_exp_image(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u6307\u6578\u8b8a\u63db", [
             {"label": "\u5e95\u6578 (base):", "key": "base", "type": "combo",
              "default": "e", "values": ["e", "2", "10"]},
         ], lambda img, p: hops.exp_image(img, p["base"]))
 
-    def _dlg_gamma_image(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gamma_image(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Gamma \u6821\u6b63", [
             {"label": "Gamma:", "key": "gamma", "type": "float", "default": 1.0},
         ], lambda img, p: hops.gamma_image(img, p["gamma"]))
 
-    def _dlg_var_threshold(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_var_threshold(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         img = self._get_current_image()
         if img is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
@@ -262,7 +262,7 @@ class HalconOpsMixin:
                     p["abs_thresh"], p["light_dark"])
 
             def _done(result):
-                from dl_anomaly.core.halcon_ops import Region
+                from dl_anomaly.core.vision_ops import Region
                 name = f"\u53ef\u8b8a\u95be\u503c w={p['width']} h={p['height']} s={p['std_mult']}"
                 region = Region(mask=result)
                 self._pipeline_panel.add_step(name, img, region=region)
@@ -285,8 +285,8 @@ class HalconOpsMixin:
              "default": "dark", "values": ["dark", "light", "equal", "not_equal"]},
         ], _on_apply)
 
-    def _dlg_local_threshold(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_local_threshold(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         img = self._get_current_image()
         if img is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
@@ -298,7 +298,7 @@ class HalconOpsMixin:
                     img, p["method"], p["light_dark"], p["ksize"], p["scale"])
 
             def _done(result):
-                from dl_anomaly.core.halcon_ops import Region
+                from dl_anomaly.core.vision_ops import Region
                 name = f"\u5c40\u90e8\u95be\u503c k={p['ksize']} s={p['scale']}"
                 region = Region(mask=result)
                 self._pipeline_panel.add_step(name, img, region=region)
@@ -322,41 +322,41 @@ class HalconOpsMixin:
             {"label": "\u6bd4\u4f8b (scale):", "key": "scale", "type": "float", "default": 0.2},
         ], _on_apply)
 
-    def _dlg_fft(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_fft(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("FFT \u983b\u8b5c", [],
                                  lambda img, p: hops.fft_image(img))
 
-    def _dlg_freq_filter(self: "HalconApp", filter_type="lowpass"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_freq_filter(self: "InspectorApp", filter_type="lowpass"):
+        from dl_anomaly.core import vision_ops as hops
         label = "\u4f4e\u901a\u6ffe\u6ce2" if filter_type == "lowpass" else "\u9ad8\u901a\u6ffe\u6ce2"
         self._open_filter_dialog(label, [
             {"label": "\u622a\u6b62\u983b\u7387 (sigma):", "key": "cutoff", "type": "float", "default": 30},
         ], lambda img, p: hops.freq_filter(img, filter_type, p["cutoff"]))
 
-    def _dlg_derivative_gauss(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_derivative_gauss(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u9ad8\u65af\u5c0e\u6578", [
             {"label": "Sigma:", "key": "sigma", "type": "float", "default": 1.0},
             {"label": "\u65b9\u5411:", "key": "component", "type": "combo",
              "default": "x", "values": ["x", "y"]},
         ], lambda img, p: hops.derivative_gauss(img, p["sigma"], p["component"]))
 
-    def _dlg_watersheds(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_watersheds(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u5206\u6c34\u5dba", [
             {"label": "\u6a19\u8a18\u95be\u503c:", "key": "marker_thresh", "type": "float", "default": 0.5},
         ], lambda img, p: hops.watersheds(img, p["marker_thresh"]))
 
-    def _dlg_distance_transform(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_distance_transform(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u8ddd\u96e2\u8b8a\u63db", [
             {"label": "\u65b9\u6cd5:", "key": "method", "type": "combo",
              "default": "L2", "values": ["L1", "L2", "C"]},
         ], lambda img, p: hops.distance_transform(img, p["method"]))
 
-    def _dlg_points_harris(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_points_harris(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Harris \u89d2\u9ede", [
             {"label": "\u5340\u584a\u5927\u5c0f:", "key": "block_size", "type": "int", "default": 2},
             {"label": "ksize:", "key": "ksize", "type": "int", "default": 3},
@@ -364,24 +364,24 @@ class HalconOpsMixin:
             {"label": "\u95be\u503c:", "key": "threshold", "type": "float", "default": 0.01},
         ], lambda img, p: hops.points_harris(img, p["block_size"], p["ksize"], p["k"], p["threshold"]))
 
-    def _dlg_points_shi_tomasi(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_points_shi_tomasi(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Shi-Tomasi \u7279\u5fb5\u9ede", [
             {"label": "\u6700\u5927\u89d2\u9ede\u6578:", "key": "max_corners", "type": "int", "default": 100},
             {"label": "\u54c1\u8cea:", "key": "quality", "type": "float", "default": 0.01},
             {"label": "\u6700\u5c0f\u8ddd\u96e2:", "key": "min_distance", "type": "float", "default": 10},
         ], lambda img, p: hops.points_shi_tomasi(img, p["max_corners"], p["quality"], p["min_distance"]))
 
-    def _dlg_hough_lines(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_hough_lines(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Hough \u76f4\u7dda", [
             {"label": "rho (\u50cf\u7d20):", "key": "rho", "type": "float", "default": 1.0},
             {"label": "theta (\u5ea6):", "key": "theta_deg", "type": "float", "default": 1.0},
             {"label": "\u95be\u503c:", "key": "threshold", "type": "int", "default": 100},
         ], lambda img, p: hops.hough_lines(img, p["rho"], p["theta_deg"], p["threshold"]))
 
-    def _dlg_hough_circles(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_hough_circles(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("Hough \u5713", [
             {"label": "dp:", "key": "dp", "type": "float", "default": 1.2},
             {"label": "\u6700\u5c0f\u8ddd\u96e2:", "key": "min_dist", "type": "float", "default": 30},
@@ -389,15 +389,15 @@ class HalconOpsMixin:
             {"label": "param2:", "key": "param2", "type": "float", "default": 30},
         ], lambda img, p: hops.hough_circles(img, p["dp"], p["min_dist"], p["param1"], p["param2"]))
 
-    def _dlg_clahe(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_clahe(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("CLAHE", [
             {"label": "\u5c0d\u6bd4\u5ea6\u9650\u5236:", "key": "clip_limit", "type": "float", "default": 2.0},
             {"label": "\u683c\u5b50\u5927\u5c0f:", "key": "tile_size", "type": "int", "default": 8},
         ], lambda img, p: hops.clahe(img, p["clip_limit"], p["tile_size"]))
 
-    def _dlg_estimate_noise(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_estimate_noise(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         img = self._get_current_image()
         if img is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
@@ -405,41 +405,41 @@ class HalconOpsMixin:
         sigma = hops.estimate_noise(img)
         messagebox.showinfo("\u566a\u8072\u4f30\u8a08", f"\u4f30\u8a08\u566a\u8072\u6a19\u6e96\u5dee \u03c3 = {sigma:.4f}")
 
-    def _dlg_gen_gauss_pyramid(self: "HalconApp"):
-        from dl_anomaly.core import halcon_ops as hops
+    def _dlg_gen_gauss_pyramid(self: "InspectorApp"):
+        from dl_anomaly.core import vision_ops as hops
         self._open_filter_dialog("\u9ad8\u65af\u91d1\u5b57\u5854", [
             {"label": "\u5c64\u6578:", "key": "levels", "type": "int", "default": 4},
         ], lambda img, p: hops.gen_gauss_pyramid(img, p["levels"])[-1])
 
     # ==================================================================
-    # Apply HALCON op (generic dispatcher)
+    # Apply vision op (generic dispatcher)
     # ==================================================================
 
-    def _apply_halcon_op(self: "HalconApp", op: str) -> None:
-        """Apply a HALCON operator in a background thread."""
+    def _apply_vision_op(self: "InspectorApp", op: str) -> None:
+        """Apply a vision operator in a background thread."""
         img = self._get_current_image()
         if img is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
             return
 
         def _compute():
-            return self._halcon_op_compute(op, img)
+            return self._vision_op_compute(op, img)
 
         def _done(pair):
             name, result = pair
             if result is not None:
-                op_meta = {"category": "halcon", "op": op, "params": {}}
+                op_meta = {"category": "vision", "op": op, "params": {}}
                 self._add_pipeline_step(name, result, op_meta=op_meta)
                 self.set_status_success(f"\u5b8c\u6210: {name}")
                 self._history_panel.add_entry(name, f"op={op}")
 
         self._run_in_bg(_compute, on_done=_done, status_msg=f"\u57f7\u884c {op}...")
 
-    def _halcon_op_compute(self: "HalconApp", op: str, img: np.ndarray):
-        """Pure computation for a HALCON op (runs in background thread).
+    def _vision_op_compute(self: "InspectorApp", op: str, img: np.ndarray):
+        """Pure computation for a vision op (runs in background thread).
         Returns (name, result_array) or (name, None).
         """
-        from dl_anomaly.core import halcon_ops as hops
+        from dl_anomaly.core import vision_ops as hops
 
         result = None
         name = ""
@@ -525,7 +525,7 @@ class HalconOpsMixin:
         elif op == "rgb_to_hls":
             result = hops.rgb_to_hls(img)
             name = "\u8f49 HLS"
-        elif op == "histogram_eq_halcon":
+        elif op in ("histogram_eq", "histogram_eq_halcon"):
             result = hops.histogram_eq(img)
             name = "\u76f4\u65b9\u5716\u5747\u8861"
         elif op == "invert_image":

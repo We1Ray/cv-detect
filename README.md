@@ -2,8 +2,8 @@
 
 <p align="center">
   <strong>整合式工業瑕疵檢測系統</strong><br>
-  深度學習 (Autoencoder / PatchCore) + 統計變異模型 (Welford) + 50 種 HALCON 影像運算子<br>
-  搭配 HALCON HDevelop 風格圖形化操作介面
+  深度學習 (Autoencoder / PatchCore) + 統計變異模型 (Welford) + 50 種影像運算子<br>
+  搭配 Industrial Vision 風格圖形化操作介面
 </p>
 
 <p align="center">
@@ -144,11 +144,11 @@ CIE Lab Delta-E 色差圖 + K-means 調色板
 </td>
 <td align="center" width="50%">
 
-**HALCON 影像運算子**
+**影像運算子**
 
 50+ 種濾波/形態學/紋理/色彩/幾何操作
 
-<img src="assets/demo/12_halcon_ops.gif" alt="HALCON Ops" width="420">
+<img src="assets/demo/12_vision_ops.gif" alt="Vision Ops" width="420">
 
 </td>
 </tr>
@@ -202,7 +202,7 @@ cv-detect/
 │   │   ├── vm_preprocessor.py      # ★ VM 影像前處理（含 ECC 對齊）
 │   │   ├── vm_postprocessor.py     # ★ VM 形態學後處理
 │   │   ├── vm_config.py            # ★ VM 專用組態
-│   │   ├── halcon_ops.py           # 50+ HALCON 影像運算子
+│   │   ├── vision_ops.py           # 50+ 影像運算子
 │   │   ├── recipe.py               # 處理管線配方（JSON）
 │   │   └── ...                     # 其餘共用模組 re-export
 │   ├── pipeline/
@@ -211,13 +211,13 @@ cv-detect/
 │   │   ├── vm_trainer.py           # ★ VM 訓練管線
 │   │   └── vm_inference.py         # ★ VM 推論管線
 │   ├── gui/                        # Tkinter GUI（6 Mixin 架構）
-│   │   ├── halcon_app.py           # 主視窗組裝
+│   │   ├── inspector_app.py        # 主視窗組裝
 │   │   ├── mixins_menu.py          # 選單建構
 │   │   ├── mixins_image_ops.py     # DL 影像/模型操作
 │   │   ├── mixins_vm_ops.py        # ★ VM 訓練/檢測操作
 │   │   ├── mixins_dialogs.py       # 對話框開啟
 │   │   ├── mixins_region.py        # 區域操作
-│   │   ├── mixins_halcon.py        # HALCON 運算子
+│   │   ├── mixins_vision.py        # 影像運算子
 │   │   └── 20+ 個 UI 面板與對話框
 │   └── visualization/
 │       ├── heatmap.py              # DL 誤差熱力圖
@@ -248,7 +248,7 @@ cv-detect/
 |------|------|
 | **DL 異常檢測** | 卷積自編碼器 (MSE+SSIM)、PatchCore (ball-tree kNN)、ONNX 匯出推論 |
 | **統計變異模型** | Welford 線上統計、均值/標準差閾值、多尺度高斯金字塔、ECC/特徵對齊 |
-| **影像處理** | 50+ HALCON 運算子：濾波、邊緣、形態學、色彩、紋理、頻域、幾何 |
+| **影像處理** | 50+ 影像運算子：濾波、邊緣、形態學、色彩、紋理、頻域、幾何 |
 | **閾值分割** | Otsu / 自適應 / 動態 / 可變 / 局部閾值 + Blob 分析 |
 | **形狀匹配** | 梯度方向餘弦相似度、金字塔搜尋、次像素精修、NMS |
 | **量測** | 次像素邊緣偵測、1D 量測矩形、直線/圓/橢圓擬合 |
@@ -257,7 +257,7 @@ cv-detect/
 | **OCR / 條碼** | Tesseract + PaddleOCR 雙引擎、ISO 15416/15415 條碼分級 |
 | **工程工具** | 相機標定 (Zhang 法)、並行管線、SPC 統計 (Cp/Cpk)、影像拼接 |
 | **部署** | ONNX (CUDA/CoreML/CPU)、`.cpmodel` 管線模型打包、PyInstaller |
-| **GUI** | HALCON HDevelop 風格三面板介面、OK/NG 判定、即時檢測、PDF 報告 |
+| **GUI** | Industrial Vision 風格三面板介面、OK/NG 判定、即時檢測、PDF 報告 |
 
 > 詳細架構說明請參閱 [`docs/architecture.md`](docs/architecture.md)
 
@@ -357,7 +357,7 @@ python dl_anomaly/main.py
 
 ### GUI 操作
 
-啟動後進入 HALCON HDevelop 風格的三面板介面：
+啟動後進入 Industrial Vision 風格的三面板介面：
 
 | 面板 | 功能 |
 |------|------|

@@ -1,6 +1,6 @@
 """ROI (Region of Interest) management for CV defect detection.
 
-Provides HALCON-style ROI creation, manipulation, and persistence.
+Provides Vision-style ROI creation, manipulation, and persistence.
 Supports rectangle, rotated rectangle, circle, ellipse, polygon, and ring
 ROI types with JSON serialisation, mask generation, and drawing utilities.
 """
@@ -587,7 +587,7 @@ class ROIManager:
 
 
 # ---------------------------------------------------------------------------
-# Factory functions (HALCON-style)
+# Factory functions (Vision-style)
 # ---------------------------------------------------------------------------
 
 
@@ -595,7 +595,7 @@ def gen_rectangle1(row1: int, col1: int, row2: int, col2: int) -> ROI:
     """Create an axis-aligned rectangle from top-left ``(col1, row1)`` to
     bottom-right ``(col2, row2)``.
 
-    Parameters follow HALCON convention: ``(row, col)``.
+    Parameters follow Vision convention: ``(row, col)``.
     """
     x = min(col1, col2)
     y = min(row1, row2)
@@ -613,7 +613,7 @@ def gen_rectangle2(
     """Create a rotated rectangle.
 
     Parameters:
-        row, col: Centre point (HALCON convention: row first).
+        row, col: Centre point (Vision convention: row first).
         phi: Rotation angle in radians.
         length1: Half-length along the major axis.
         length2: Half-length along the minor axis.
@@ -635,7 +635,7 @@ def gen_circle(row: float, col: float, radius: float) -> ROI:
     """Create a circle ROI.
 
     Parameters:
-        row, col: Centre point (HALCON convention).
+        row, col: Centre point (Vision convention).
         radius: Circle radius in pixels.
     """
     return ROI(
@@ -650,7 +650,7 @@ def gen_ellipse(
     """Create an ellipse ROI.
 
     Parameters:
-        row, col: Centre point (HALCON convention).
+        row, col: Centre point (Vision convention).
         phi: Orientation angle in radians.
         ra: Semi-axis length along the major axis.
         rb: Semi-axis length along the minor axis.
@@ -691,7 +691,7 @@ def gen_ring(
     """Create a ring (annulus) ROI.
 
     Parameters:
-        row, col: Centre point (HALCON convention).
+        row, col: Centre point (Vision convention).
         inner_radius: Inner radius.
         outer_radius: Outer radius.
     """

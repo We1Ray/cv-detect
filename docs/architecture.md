@@ -14,7 +14,7 @@ cv-detect/
 │   │   ├── anomaly_scorer.py    #   異常評分（MSE + SSIM，dtype 優化）
 │   │   ├── dataset.py           #   PyTorch Dataset
 │   │   ├── preprocessor.py      #   影像前處理與增強
-│   │   ├── halcon_ops.py        #   HALCON 影像操作（16 類別）
+│   │   ├── vision_ops.py        #   影像操作（16 類別）
 │   │   ├── region_ops.py        #   區域操作
 │   │   ├── recipe.py            #   處理管線配方（JSON 持久化）
 │   │   ├── roi_manager.py       #   ROI 管理（Phase 1）
@@ -24,12 +24,12 @@ cv-detect/
 │   │   ├── trainer.py           #   訓練管線（GPU batch SSIM、無竟態條件）
 │   │   └── inference.py         #   推論管線（自動 MPS/CUDA/CPU）
 │   ├── gui/                     # Tkinter GUI（Mixin 架構）
-│   │   ├── halcon_app.py        #   主視窗（645 行，含 5 個 mixin）
+│   │   ├── inspector_app.py     #   主視窗（645 行，含 5 個 mixin）
 │   │   ├── mixins_menu.py       #   選單建構 mixin
 │   │   ├── mixins_image_ops.py  #   影像操作 mixin
 │   │   ├── mixins_dialogs.py    #   對話框 mixin
 │   │   ├── mixins_region.py     #   區域操作 mixin
-│   │   ├── mixins_halcon.py     #   HALCON 運算子 mixin
+│   │   ├── mixins_vision.py     #   影像運算子 mixin
 │   │   ├── image_viewer.py      #   影像檢視器（縮放、平移、像素追蹤）
 │   │   ├── pipeline_panel.py    #   管線面板（步驟縮圖）
 │   │   ├── toolbar.py           #   工具列
@@ -68,12 +68,12 @@ cv-detect/
 │   │   ├── inspector.py         #   瑕疵比對（無複製優化）
 │   │   ├── preprocessor.py      #   影像前處理與對齊
 │   │   ├── postprocessor.py     #   形態學後處理
-│   │   ├── halcon_ops.py        #   HALCON 影像操作
+│   │   ├── vision_ops.py        #   影像操作
 │   │   ├── region_ops.py        #   區域操作
 │   │   └── *.py                 #   其餘為 shared/core/ 的 re-export
 │   ├── pipeline/                # 管線編排
 │   ├── gui/                     # Tkinter GUI（繁體中文介面）
-│   │   ├── halcon_app.py        #   主視窗
+│   │   ├── inspector_app.py     #   主視窗
 │   │   ├── image_viewer.py      #   影像檢視器
 │   │   ├── pipeline_panel.py    #   管線面板
 │   │   ├── toolbar.py           #   工具列
@@ -217,7 +217,7 @@ auto → CUDA (NVIDIA) → MPS (Apple Silicon M1+) → CPU
 
 ### Mixin 架構（DL Anomaly GUI）
 
-`HalconApp` 主視窗拆分為 5 個 mixin，降低單檔複雜度：
+`InspectorApp` 主視窗拆分為 5 個 mixin，降低單檔複雜度：
 
 | Mixin | 職責 | 行數 |
 |-------|------|------|
@@ -225,8 +225,8 @@ auto → CUDA (NVIDIA) → MPS (Apple Silicon M1+) → CPU
 | `ImageOpsMixin` | 影像 I/O、模型操作、DL 操作 | 878 |
 | `DialogMixin` | 所有對話框開啟 | 506 |
 | `RegionMixin` | 區域/形態學操作 | 659 |
-| `HalconOpsMixin` | HALCON 運算子與濾波器 | 621 |
-| `HalconApp`（主檔） | 初始化、佈局、事件綁定 | 645 |
+| `VisionOpsMixin` | 影像運算子與濾波器 | 621 |
+| `InspectorApp`（主檔） | 初始化、佈局、事件綁定 | 645 |
 
 ### 共用核心模組
 

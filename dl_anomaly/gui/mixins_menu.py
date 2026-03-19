@@ -1,4 +1,4 @@
-"""Menu construction mixin for HalconApp."""
+"""Menu construction mixin for InspectorApp."""
 
 from __future__ import annotations
 
@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 from dl_anomaly.gui.platform_keys import accel, accel_shift
 
 if TYPE_CHECKING:
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
 
 class MenuMixin:
-    """Builds the full menu bar for HalconApp."""
+    """Builds the full menu bar for InspectorApp."""
 
-    def _build_menu(self: "HalconApp") -> None:
+    def _build_menu(self: "InspectorApp") -> None:
         menubar = tk.Menu(self, bg="#2b2b2b", fg="#e0e0e0", activebackground="#3a3a5c", activeforeground="#ffffff")
 
         # -- File --
@@ -113,11 +113,11 @@ class MenuMixin:
         region_menu.add_command(label="\u8f2a\u5ed3\u6aa2\u6e2c...", command=self._open_contour_detection_dialog)
         menubar.add_cascade(label="\u5340\u57df", menu=region_menu)
 
-        # -- HALCON --
-        halcon_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        # -- 影像處理 --
+        vision_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                               activebackground="#3a3a5c", activeforeground="#ffffff")
 
-        filter_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        filter_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                               activebackground="#3a3a5c", activeforeground="#ffffff")
         filter_menu.add_command(label="\u5747\u503c\u6ffe\u6ce2...", command=self._dlg_mean_image)
         filter_menu.add_command(label="\u4e2d\u503c\u6ffe\u6ce2...", command=self._dlg_median_image)
@@ -125,19 +125,19 @@ class MenuMixin:
         filter_menu.add_command(label="\u96d9\u908a\u6ffe\u6ce2...", command=self._dlg_bilateral_filter)
         filter_menu.add_command(label="\u92b3\u5316...", command=self._dlg_sharpen)
         filter_menu.add_command(label="\u5f37\u8abf...", command=self._dlg_emphasize)
-        filter_menu.add_command(label="Laplacian", command=lambda: self._apply_halcon_op("laplace_filter"))
-        halcon_menu.add_cascade(label="\u6ffe\u6ce2", menu=filter_menu)
+        filter_menu.add_command(label="Laplacian", command=lambda: self._apply_vision_op("laplace_filter"))
+        vision_menu.add_cascade(label="\u6ffe\u6ce2", menu=filter_menu)
 
-        edge_menu2 = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        edge_menu2 = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                              activebackground="#3a3a5c", activeforeground="#ffffff")
         edge_menu2.add_command(label="Canny \u908a\u7de3...", command=self._dlg_canny)
-        edge_menu2.add_command(label="Sobel", command=lambda: self._apply_halcon_op("sobel_filter"))
-        edge_menu2.add_command(label="Prewitt", command=lambda: self._apply_halcon_op("prewitt_filter"))
-        edge_menu2.add_command(label="\u96f6\u4ea4\u53c9", command=lambda: self._apply_halcon_op("zero_crossing"))
+        edge_menu2.add_command(label="Sobel", command=lambda: self._apply_vision_op("sobel_filter"))
+        edge_menu2.add_command(label="Prewitt", command=lambda: self._apply_vision_op("prewitt_filter"))
+        edge_menu2.add_command(label="\u96f6\u4ea4\u53c9", command=lambda: self._apply_vision_op("zero_crossing"))
         edge_menu2.add_command(label="\u9ad8\u65af\u5c0e\u6578...", command=self._dlg_derivative_gauss)
-        halcon_menu.add_cascade(label="\u908a\u7de3", menu=edge_menu2)
+        vision_menu.add_cascade(label="\u908a\u7de3", menu=edge_menu2)
 
-        morph_menu2 = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        morph_menu2 = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                               activebackground="#3a3a5c", activeforeground="#ffffff")
         morph_menu2.add_command(label="\u7070\u5ea6\u4fb5\u8755...", command=self._dlg_gray_erosion)
         morph_menu2.add_command(label="\u7070\u5ea6\u81a8\u8139...", command=self._dlg_gray_dilation)
@@ -147,96 +147,96 @@ class MenuMixin:
         morph_menu2.add_command(label="Bottom-hat...", command=self._dlg_bottom_hat)
         morph_menu2.add_separator()
         morph_menu2.add_command(label="\u52d5\u614b\u95be\u503c\u5206\u5272...", command=self._open_dyn_threshold_dialog)
-        halcon_menu.add_cascade(label="\u5f62\u614b\u5b78", menu=morph_menu2)
+        vision_menu.add_cascade(label="\u5f62\u614b\u5b78", menu=morph_menu2)
 
-        geom_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        geom_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
         for label, op in [("\u65cb\u8f49 90\u00b0", "rotate_90"), ("\u65cb\u8f49 180\u00b0", "rotate_180"),
                           ("\u65cb\u8f49 270\u00b0", "rotate_270"),
                           ("\u6c34\u5e73\u93e1\u50cf", "mirror_h"), ("\u5782\u76f4\u93e1\u50cf", "mirror_v"),
                           ("\u7e2e\u653e 50%", "zoom_50"), ("\u7e2e\u653e 200%", "zoom_200")]:
-            geom_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="\u5e7e\u4f55", menu=geom_menu)
+            geom_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="\u5e7e\u4f55", menu=geom_menu)
 
-        color_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        color_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                              activebackground="#3a3a5c", activeforeground="#ffffff")
         for label, op in [("\u8f49\u7070\u968e", "rgb_to_gray"), ("\u8f49 HSV", "rgb_to_hsv"),
                           ("\u8f49 HLS", "rgb_to_hls"),
-                          ("\u76f4\u65b9\u5716\u5747\u8861", "histogram_eq_halcon"),
+                          ("\u76f4\u65b9\u5716\u5747\u8861", "histogram_eq"),
                           ("\u53cd\u8272", "invert_image"), ("\u5149\u7167\u6821\u6b63", "illuminate")]:
-            color_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
+            color_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
         color_menu.add_separator()
         color_menu.add_command(label="CLAHE...", command=self._dlg_clahe)
-        halcon_menu.add_cascade(label="\u8272\u5f69", menu=color_menu)
+        vision_menu.add_cascade(label="\u8272\u5f69", menu=color_menu)
 
-        gray_trans_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        gray_trans_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                                   activebackground="#3a3a5c", activeforeground="#ffffff")
         gray_trans_menu.add_command(label="\u4eae\u5ea6/\u5c0d\u6bd4\u5ea6\u8abf\u6574...", command=self._dlg_scale_image)
-        gray_trans_menu.add_command(label="\u7d55\u5c0d\u503c", command=lambda: self._apply_halcon_op("abs_image"))
-        gray_trans_menu.add_command(label="\u53cd\u8272", command=lambda: self._apply_halcon_op("invert_image"))
+        gray_trans_menu.add_command(label="\u7d55\u5c0d\u503c", command=lambda: self._apply_vision_op("abs_image"))
+        gray_trans_menu.add_command(label="\u53cd\u8272", command=lambda: self._apply_vision_op("invert_image"))
         gray_trans_menu.add_command(label="\u5c0d\u6578\u8b8a\u63db...", command=self._dlg_log_image)
         gray_trans_menu.add_command(label="\u6307\u6578\u8b8a\u63db...", command=self._dlg_exp_image)
         gray_trans_menu.add_command(label="Gamma \u6821\u6b63...", command=self._dlg_gamma_image)
-        halcon_menu.add_cascade(label="\u7070\u5ea6\u8b8a\u63db", menu=gray_trans_menu)
+        vision_menu.add_cascade(label="\u7070\u5ea6\u8b8a\u63db", menu=gray_trans_menu)
 
-        img_op_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        img_op_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                               activebackground="#3a3a5c", activeforeground="#ffffff")
         img_op_menu.add_command(label="\u5716\u50cf\u76f8\u6e1b...", command=self._open_subtract_dialog)
-        img_op_menu.add_command(label="\u7d55\u5c0d\u5dee\u5206", command=lambda: self._apply_halcon_op("abs_diff_image"))
-        halcon_menu.add_cascade(label="\u5716\u50cf\u904b\u7b97", menu=img_op_menu)
+        img_op_menu.add_command(label="\u7d55\u5c0d\u5dee\u5206", command=lambda: self._apply_vision_op("abs_diff_image"))
+        vision_menu.add_cascade(label="\u5716\u50cf\u904b\u7b97", menu=img_op_menu)
 
-        freq_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        freq_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
         freq_menu.add_command(label="FFT \u983b\u8b5c...", command=self._dlg_fft)
         freq_menu.add_command(label="\u4f4e\u901a\u6ffe\u6ce2...", command=lambda: self._dlg_freq_filter("lowpass"))
         freq_menu.add_command(label="\u9ad8\u901a\u6ffe\u6ce2...", command=lambda: self._dlg_freq_filter("highpass"))
-        halcon_menu.add_cascade(label="\u983b\u57df\u8655\u7406", menu=freq_menu)
+        vision_menu.add_cascade(label="\u983b\u57df\u8655\u7406", menu=freq_menu)
 
-        texture_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        texture_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                                activebackground="#3a3a5c", activeforeground="#ffffff")
         for label, op in [("\u71b5\u5f71\u50cf", "entropy_image"), ("\u6a19\u6e96\u5dee\u5f71\u50cf", "deviation_image"),
                           ("\u5c40\u90e8\u6700\u5c0f", "local_min"), ("\u5c40\u90e8\u6700\u5927", "local_max")]:
-            texture_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="\u7d0b\u7406", menu=texture_menu)
+            texture_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="\u7d0b\u7406", menu=texture_menu)
 
-        barcode_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        barcode_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                                activebackground="#3a3a5c", activeforeground="#ffffff")
         for label, op in [("\u689d\u78bc\u5075\u6e2c", "find_barcode"), ("QR Code", "find_qrcode"),
                           ("DataMatrix", "find_datamatrix")]:
-            barcode_menu.add_command(label=label, command=lambda o=op: self._apply_halcon_op(o))
-        halcon_menu.add_cascade(label="\u689d\u78bc", menu=barcode_menu)
+            barcode_menu.add_command(label=label, command=lambda o=op: self._apply_vision_op(o))
+        vision_menu.add_cascade(label="\u689d\u78bc", menu=barcode_menu)
 
         # 分割
-        seg_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        seg_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                            activebackground="#3a3a5c", activeforeground="#ffffff")
         seg_menu.add_command(label="\u5206\u6c34\u5dba...", command=self._dlg_watersheds)
         seg_menu.add_command(label="\u8ddd\u96e2\u8b8a\u63db...", command=self._dlg_distance_transform)
-        seg_menu.add_command(label="\u9aa8\u67b6\u5316", command=lambda: self._apply_halcon_op("skeleton"))
-        halcon_menu.add_cascade(label="\u5206\u5272", menu=seg_menu)
+        seg_menu.add_command(label="\u9aa8\u67b6\u5316", command=lambda: self._apply_vision_op("skeleton"))
+        vision_menu.add_cascade(label="\u5206\u5272", menu=seg_menu)
 
         # 特徵點
-        feat_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        feat_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
         feat_menu.add_command(label="Harris \u89d2\u9ede...", command=self._dlg_points_harris)
         feat_menu.add_command(label="Shi-Tomasi \u7279\u5fb5\u9ede...", command=self._dlg_points_shi_tomasi)
-        halcon_menu.add_cascade(label="\u7279\u5fb5\u9ede", menu=feat_menu)
+        vision_menu.add_cascade(label="\u7279\u5fb5\u9ede", menu=feat_menu)
 
         # 直線/圓偵測
-        hough_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        hough_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                              activebackground="#3a3a5c", activeforeground="#ffffff")
         hough_menu.add_command(label="Hough \u76f4\u7dda...", command=self._dlg_hough_lines)
         hough_menu.add_command(label="Hough \u5713...", command=self._dlg_hough_circles)
-        halcon_menu.add_cascade(label="\u76f4\u7dda/\u5713\u5075\u6e2c", menu=hough_menu)
+        vision_menu.add_cascade(label="\u76f4\u7dda/\u5713\u5075\u6e2c", menu=hough_menu)
 
         # 相機
-        camera_menu = tk.Menu(halcon_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+        camera_menu = tk.Menu(vision_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                               activebackground="#3a3a5c", activeforeground="#ffffff")
-        camera_menu.add_command(label="\u64f7\u53d6\u5f71\u50cf", command=lambda: self._apply_halcon_op("grab_image"))
-        halcon_menu.add_cascade(label="\u76f8\u6a5f", menu=camera_menu)
+        camera_menu.add_command(label="\u64f7\u53d6\u5f71\u50cf", command=lambda: self._apply_vision_op("grab_image"))
+        vision_menu.add_cascade(label="\u76f8\u6a5f", menu=camera_menu)
 
-        halcon_menu.add_separator()
-        halcon_menu.add_command(label="\u8173\u672c\u7de8\u8f2f\u5668", command=self._toggle_script_editor, accelerator="F8")
-        menubar.add_cascade(label="HALCON", menu=halcon_menu)
+        vision_menu.add_separator()
+        vision_menu.add_command(label="\u8173\u672c\u7de8\u8f2f\u5668", command=self._toggle_script_editor, accelerator="F8")
+        menubar.add_cascade(label="\u5f71\u50cf\u8655\u7406", menu=vision_menu)
 
         # -- Model --
         model_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",

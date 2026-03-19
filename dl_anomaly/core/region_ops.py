@@ -1,4 +1,4 @@
-"""Region operations for HALCON-style image processing.
+"""Region operations for vision-style image processing.
 
 Provides threshold, binary_threshold, connection, select_shape,
 compute_region_properties, and region_to_display_image functions
@@ -83,7 +83,7 @@ def binary_threshold(
 def connection(region: Region) -> Region:
     """Re-label a region so every connected component gets its own label.
 
-    This is analogous to HALCON's ``connection`` operator.
+    This is analogous to the ``connection`` operator in industrial vision.
     """
     mask = region.to_binary_mask()
     num, labels = cv2.connectedComponents(mask, connectivity=8)

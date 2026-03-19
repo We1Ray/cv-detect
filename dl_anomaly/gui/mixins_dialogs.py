@@ -1,4 +1,4 @@
-"""Dialog-opening mixin for HalconApp.
+"""Dialog-opening mixin for InspectorApp.
 
 Covers: pixel inspector, threshold dialogs, binarize, adaptive threshold,
 subtract dialog, contour detection, dynamic threshold, script editor,
@@ -15,17 +15,17 @@ import cv2
 import numpy as np
 
 if TYPE_CHECKING:
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
 
 class DialogMixin:
-    """All dialog-opening methods for HalconApp."""
+    """All dialog-opening methods for InspectorApp."""
 
     # ==================================================================
     # Pixel Inspector
     # ==================================================================
 
-    def _toggle_pixel_inspector(self: "HalconApp", state: bool = None) -> None:
+    def _toggle_pixel_inspector(self: "InspectorApp", state: bool = None) -> None:
         """Toggle the pixel inspector window."""
         if self._pixel_inspector is not None and self._pixel_inspector.winfo_exists():
             self._pixel_inspector.destroy()
@@ -38,7 +38,7 @@ class DialogMixin:
     # Threshold dialog
     # ==================================================================
 
-    def _open_threshold_dialog(self: "HalconApp") -> None:
+    def _open_threshold_dialog(self: "InspectorApp") -> None:
         """Open threshold segmentation dialog."""
         img = self._get_current_image()
         if img is None:
@@ -66,7 +66,7 @@ class DialogMixin:
     # Binarize
     # ==================================================================
 
-    def _open_binarize_dialog(self: "HalconApp"):
+    def _open_binarize_dialog(self: "InspectorApp"):
         """Open binarization dialog -- produces a binary IMAGE (not Region)."""
         img = self._get_current_image()
         if img is None:
@@ -79,7 +79,7 @@ class DialogMixin:
             {"label": "\u65b9\u6cd5:", "key": "method", "type": "combo", "default": "THRESH_BINARY", "values": methods},
         ], lambda p: self._apply_binarize(img, p))
 
-    def _apply_binarize(self: "HalconApp", img, p):
+    def _apply_binarize(self: "InspectorApp", img, p):
         method_map = {
             "THRESH_BINARY": cv2.THRESH_BINARY,
             "THRESH_BINARY_INV": cv2.THRESH_BINARY_INV,
@@ -90,7 +90,7 @@ class DialogMixin:
         cv_method = method_map.get(p["method"], cv2.THRESH_BINARY)
 
         def _compute():
-            from dl_anomaly.core.halcon_ops import _ensure_gray
+            from dl_anomaly.core.vision_ops import _ensure_gray
             gray = _ensure_gray(img)
             _, binary = cv2.threshold(gray, thresh_val, 255, cv_method)
             return binary
@@ -106,7 +106,7 @@ class DialogMixin:
     # Adaptive Threshold
     # ==================================================================
 
-    def _open_adaptive_threshold_dialog(self: "HalconApp"):
+    def _open_adaptive_threshold_dialog(self: "InspectorApp"):
         """Open adaptive threshold dialog with parameter control."""
         img = self._get_current_image()
         if img is None:
@@ -120,7 +120,7 @@ class DialogMixin:
              "default": "GAUSSIAN_C", "values": ["MEAN_C", "GAUSSIAN_C"]},
         ], lambda p: self._apply_adaptive_threshold(img, p))
 
-    def _apply_adaptive_threshold(self: "HalconApp", img, p):
+    def _apply_adaptive_threshold(self: "InspectorApp", img, p):
         block_size = p["block_size"]
         c_value = p["c_value"]
         adapt_method = p["method"]
@@ -150,7 +150,7 @@ class DialogMixin:
     # Subtract dialog
     # ==================================================================
 
-    def _open_subtract_dialog(self: "HalconApp"):
+    def _open_subtract_dialog(self: "InspectorApp"):
         """Open image subtraction dialog -- select two pipeline steps."""
         steps = self._pipeline_panel.get_all_steps()
         if len(steps) < 2:
@@ -213,7 +213,7 @@ class DialogMixin:
             dlg.destroy()
 
             def _compute():
-                from dl_anomaly.core import halcon_ops as hops
+                from dl_anomaly.core import vision_ops as hops
                 return hops.sub_image(img_a, img_b, mult, add)
 
             def _done(result):
@@ -241,7 +241,7 @@ class DialogMixin:
     # Contour detection
     # ==================================================================
 
-    def _open_contour_detection_dialog(self: "HalconApp"):
+    def _open_contour_detection_dialog(self: "InspectorApp"):
         """Open contour detection dialog with area filter."""
         img = self._get_current_image()
         if img is None:
@@ -255,13 +255,13 @@ class DialogMixin:
             {"label": "\u6a21\u5f0f:", "key": "mode", "type": "combo", "default": "RETR_LIST", "values": modes},
         ], lambda p: self._apply_contour_detection(img, p))
 
-    def _apply_contour_detection(self: "HalconApp", img, p):
+    def _apply_contour_detection(self: "InspectorApp", img, p):
         min_area = p["min_area"]
         max_area = p["max_area"]
         mode_str = p["mode"]
 
         def _compute():
-            from dl_anomaly.core.halcon_ops import _ensure_gray
+            from dl_anomaly.core.vision_ops import _ensure_gray
             mode_map = {"RETR_LIST": cv2.RETR_LIST, "RETR_EXTERNAL": cv2.RETR_EXTERNAL}
             cv_mode = mode_map.get(mode_str, cv2.RETR_LIST)
 
@@ -289,8 +289,8 @@ class DialogMixin:
     # Dynamic threshold dialog
     # ==================================================================
 
-    def _open_dyn_threshold_dialog(self: "HalconApp") -> None:
-        """Open dialog for dynamic threshold segmentation (HALCON style)."""
+    def _open_dyn_threshold_dialog(self: "InspectorApp") -> None:
+        """Open dialog for dynamic threshold segmentation (vision style)."""
         img = self._get_current_image()
         if img is None:
             messagebox.showwarning("\u8b66\u544a", "\u8acb\u5148\u8f09\u5165\u5716\u7247\u3002")
@@ -350,7 +350,7 @@ class DialogMixin:
             src = img
 
             def _compute():
-                from dl_anomaly.core import halcon_ops as hops
+                from dl_anomaly.core import vision_ops as hops
                 from dl_anomaly.core.region import Region
                 from dl_anomaly.core.region_ops import compute_region_properties
 
@@ -393,7 +393,7 @@ class DialogMixin:
     # Script Editor
     # ==================================================================
 
-    def _toggle_script_editor(self: "HalconApp", state: bool = None) -> None:
+    def _toggle_script_editor(self: "InspectorApp", state: bool = None) -> None:
         """Toggle script editor panel."""
         if self._script_editor_visible:
             if self._script_editor is not None:
@@ -413,7 +413,7 @@ class DialogMixin:
             self._script_editor_visible = True
             self.set_status("\u8173\u672c\u7de8\u8f2f\u5668\u5df2\u958b\u555f (F9 \u57f7\u884c)")
 
-    def _run_script(self: "HalconApp") -> None:
+    def _run_script(self: "InspectorApp") -> None:
         """Run script from the script editor."""
         if self._script_editor is not None and self._script_editor_visible:
             self._script_editor.run_script()
@@ -422,7 +422,7 @@ class DialogMixin:
     # Phase 1 Tools: Shape Matching, Metrology, ROI Manager
     # ==================================================================
 
-    def _open_shape_matching(self: "HalconApp") -> None:
+    def _open_shape_matching(self: "InspectorApp") -> None:
         """Open Shape-Based Matching dialog."""
         from dl_anomaly.gui.shape_matching_dialog import ShapeMatchingDialog
 
@@ -433,7 +433,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _open_metrology(self: "HalconApp") -> None:
+    def _open_metrology(self: "InspectorApp") -> None:
         """Open Metrology / Sub-pixel Measurement dialog."""
         from dl_anomaly.gui.metrology_dialog import MetrologyDialog
 
@@ -444,7 +444,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _open_roi_manager(self: "HalconApp") -> None:
+    def _open_roi_manager(self: "InspectorApp") -> None:
         """Open ROI Manager dialog."""
         from dl_anomaly.gui.roi_dialog import ROIManagerDialog
 
@@ -456,7 +456,7 @@ class DialogMixin:
             viewer=self._viewer,
         )
 
-    def _open_advanced_models(self: "HalconApp") -> None:
+    def _open_advanced_models(self: "InspectorApp") -> None:
         """Open PatchCore / ONNX advanced models dialog."""
         from dl_anomaly.gui.advanced_models_dialog import AdvancedModelsDialog
 
@@ -468,7 +468,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _open_inspection_tools(self: "HalconApp") -> None:
+    def _open_inspection_tools(self: "InspectorApp") -> None:
         """Open FFT / Color / OCR / Barcode inspection tools dialog."""
         from dl_anomaly.gui.inspection_tools_dialog import InspectionToolsDialog
 
@@ -479,7 +479,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _open_engineering_tools(self: "HalconApp") -> None:
+    def _open_engineering_tools(self: "InspectorApp") -> None:
         """Open Calibration / Pipeline / SPC / Stitching engineering tools dialog."""
         from dl_anomaly.gui.engineering_tools_dialog import EngineeringToolsDialog
 
@@ -490,7 +490,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _open_mvp_tools(self: "HalconApp") -> None:
+    def _open_mvp_tools(self: "InspectorApp") -> None:
         """Open MVP tools dialog (Camera / Inspection Flow / Report)."""
         try:
             from dl_anomaly.gui.mvp_tools_dialog import MVPToolsDialog
@@ -509,7 +509,7 @@ class DialogMixin:
     # Pipeline Model (save / load / manage)
     # ==================================================================
 
-    def _cmd_save_pipeline_model(self: "HalconApp") -> None:
+    def _cmd_save_pipeline_model(self: "InspectorApp") -> None:
         """Save current pipeline + flow as a .cpmodel file."""
         from dl_anomaly.gui.pipeline_model_dialog import save_pipeline_model_dialog
         save_pipeline_model_dialog(
@@ -518,7 +518,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _cmd_load_pipeline_model(self: "HalconApp") -> None:
+    def _cmd_load_pipeline_model(self: "InspectorApp") -> None:
         """Load and execute a .cpmodel pipeline model."""
         from dl_anomaly.gui.pipeline_model_dialog import load_pipeline_model_dialog
         load_pipeline_model_dialog(
@@ -528,7 +528,7 @@ class DialogMixin:
             set_status=self.set_status,
         )
 
-    def _open_pipeline_model_manager(self: "HalconApp") -> None:
+    def _open_pipeline_model_manager(self: "InspectorApp") -> None:
         """Open the pipeline model registry manager dialog."""
         from dl_anomaly.gui.pipeline_model_dialog import PipelineModelManagerDialog
         PipelineModelManagerDialog(
@@ -542,7 +542,7 @@ class DialogMixin:
     # Auto-Tune
     # ==================================================================
 
-    def _open_auto_tune(self: "HalconApp") -> None:
+    def _open_auto_tune(self: "InspectorApp") -> None:
         """Open automatic threshold calibration dialog."""
         from dl_anomaly.gui.auto_tune_dialog import AutoTuneDialog
         AutoTuneDialog(self, set_status=self.set_status)

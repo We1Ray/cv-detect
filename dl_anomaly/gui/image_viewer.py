@@ -1,4 +1,4 @@
-"""Enhanced zoomable, pannable image viewer with HALCON HDevelop-style features.
+"""Enhanced zoomable, pannable image viewer with Industrial Vision-style features.
 
 Supports NumPy/PIL images with:
 - Mouse-wheel zoom centred on cursor
@@ -171,7 +171,7 @@ class ImageViewer(ttk.Frame):
         # Subtitle
         items.append(self._canvas.create_text(
             cx, cy - 45,
-            text="HALCON-Style Industrial Inspection",
+            text="Industrial Vision Inspection",
             font=("Segoe UI", 11),
             fill="#444444",
             anchor=tk.CENTER,

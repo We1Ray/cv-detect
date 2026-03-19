@@ -294,7 +294,7 @@ plt.show()
 
 ## Demo 3：GUI 圖形化操作
 
-啟動 HALCON HDevelop 風格的圖形化介面，支援互動式操作。
+啟動 Industrial Vision 風格的圖形化介面，支援互動式操作。
 
 ```bash
 cd /Users/WeiRay/Desktop/Work/TastyByte/cv-detect

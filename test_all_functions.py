@@ -16,7 +16,7 @@
   C. 影像前處理 (preprocessor)
   D. 深度學習核心 (autoencoder, dataset)
   E. 異常評分 (anomaly_scorer)
-  F. HALCON 影像處理運算子 (halcon_ops) — 16 個子分類
+  F. 影像處理運算子 (vision_ops) — 16 個子分類
   G. 區域運算 (region, region_ops)
   H. 配方系統 (recipe)
   I. 訓練管線 (trainer)
@@ -515,13 +515,13 @@ def test_anomaly_scorer():
 
 
 # =======================================================================
-# F. HALCON 影像處理運算子 — 16 子分類
+# F. 影像處理運算子 — 16 子分類
 # =======================================================================
 
-def test_halcon_ops():
-    cat = "F.HALCON運算子"
+def test_vision_ops():
+    cat = "F.影像運算子"
 
-    from dl_anomaly.core import halcon_ops as hops
+    from dl_anomaly.core import vision_ops as hops
 
     gray = GRAY_IMG.copy()
     color = COLOR_IMG.copy()
@@ -799,13 +799,13 @@ def test_halcon_ops():
     run_test(cat, sub, "abs_diff_image()", hops.abs_diff_image, gray, gray2)
     run_test(cat, sub, "clahe(clip=2.0)", hops.clahe, gray)
 
-    # halcon_ops.Region __post_init__
+    # vision_ops.Region __post_init__
     sub = "F0.Region類別"
-    def test_halcon_region():
+    def test_vision_region():
         r = hops.Region(mask=BINARY_MASK.copy())
         assert r.area > 0
         assert r.cx > 0
-    run_test(cat, sub, "Region.__post_init__()", test_halcon_region)
+    run_test(cat, sub, "Region.__post_init__()", test_vision_region)
 
 
 # =======================================================================
@@ -1011,7 +1011,7 @@ def test_recipe():
 
     steps = [
         {"name": "灰階", "category": "quick_op", "op": "grayscale", "params": {}},
-        {"name": "高斯模糊", "category": "halcon", "op": "gauss_blur", "params": {"ksize": 5}},
+        {"name": "高斯模糊", "category": "vision", "op": "gauss_blur", "params": {"ksize": 5}},
         {"name": "邊緣", "category": "quick_op", "op": "edge", "params": {}},
     ]
 
@@ -1038,18 +1038,18 @@ def test_recipe():
                 assert isinstance(img, np.ndarray)
         run_test(cat, sub, "replay_recipe(3步)", test_replay)
 
-    # _replay_halcon 各操作
-    sub = "replay_halcon"
-    halcon_ops = [
+    # _replay_vision 各操作
+    sub = "replay_vision"
+    vision_ops_list = [
         ("rgb_to_gray", {}),
         ("invert_image", {}),
         ("mean_image", {"ksize": 5}),
         ("gauss_blur", {"ksize": 5}),
         ("sobel_filter", {}),
     ]
-    for op, params in halcon_ops:
+    for op, params in vision_ops_list:
         test_recipe_obj = Recipe(steps=[
-            {"name": op, "category": "halcon", "op": op, "params": params}
+            {"name": op, "category": "vision", "op": op, "params": params}
         ])
         run_test(cat, sub, f"replay({op})", replay_recipe, test_recipe_obj, COLOR_IMG.copy())
 
@@ -1470,7 +1470,7 @@ def main():
     test_autoencoder()
     test_dataset()
     test_anomaly_scorer()
-    test_halcon_ops()
+    test_vision_ops()
     test_region()
     test_recipe()
     test_trainer()

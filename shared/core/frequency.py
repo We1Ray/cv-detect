@@ -4,7 +4,7 @@ core/frequency.py - Advanced frequency domain processing for defect detection.
 Provides comprehensive FFT tools specifically designed for industrial defect
 detection, including filter generation, periodic pattern removal, and
 frequency-based anomaly detection.  Complements the basic ``fft_image`` and
-``freq_filter`` helpers in :pymod:`halcon_ops`.
+``freq_filter`` helpers in :pymod:`vision_ops`.
 
 Categories:
     1.  Core FFT Operations

@@ -1,7 +1,7 @@
 """
 core/metrology.py - Sub-pixel measurement and metrology operators.
 
-Provides HALCON-style measurement and geometric fitting operators for
+Provides Vision-style measurement and geometric fitting operators for
 precision metrology tasks in defect detection pipelines.
 
 Categories:

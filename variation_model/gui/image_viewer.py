@@ -1,5 +1,5 @@
 """
-gui/image_viewer.py - HALCON HDevelop 風格的可互動影像檢視器
+gui/image_viewer.py - Industrial Vision 風格的可互動影像檢視器
 
 功能：
 - OpenCV/NumPy 影像顯示（BGR -> RGB -> PhotoImage）
@@ -24,7 +24,7 @@ from PIL import Image, ImageTk
 
 
 class ImageViewer(tk.Canvas):
-    """HALCON HDevelop 風格的可縮放、可平移影像檢視器。"""
+    """Industrial Vision 風格的可縮放、可平移影像檢視器。"""
 
     def __init__(self, master: tk.Widget, **kwargs) -> None:
         kwargs.setdefault("bg", "#1e1e1e")

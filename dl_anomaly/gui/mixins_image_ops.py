@@ -1,4 +1,4 @@
-"""Image operations mixin for HalconApp.
+"""Image operations mixin for InspectorApp.
 
 Covers: file I/O, undo/redo, view commands, pipeline helpers,
 model commands, inspection commands, DL operations, recipe commands,
@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image
 
 if TYPE_CHECKING:
-    from dl_anomaly.gui.halcon_app import HalconApp
+    from dl_anomaly.gui.inspector_app import InspectorApp
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class ImageOpsMixin:
     # Pipeline helpers
     # ==================================================================
 
-    def _add_pipeline_step(self: "HalconApp", name: str, array: np.ndarray, op_meta=None) -> None:
+    def _add_pipeline_step(self: "InspectorApp", name: str, array: np.ndarray, op_meta=None) -> None:
         """Add a new step to the pipeline and display it."""
         ci = self._pipeline_panel.get_current_index()
         if ci >= 0:
@@ -39,7 +39,7 @@ class ImageOpsMixin:
         self._redo_stack.clear()
         self._pipeline_panel.add_step(name, array, select=True, op_meta=op_meta)
 
-    def _load_image_to_pipeline(self: "HalconApp", path: str) -> None:
+    def _load_image_to_pipeline(self: "InspectorApp", path: str) -> None:
         """Load an image file and add it as the first pipeline step."""
         from PIL import Image as PILImage
 
@@ -80,7 +80,7 @@ class ImageOpsMixin:
     # File commands
     # ==================================================================
 
-    def _cmd_open_image(self: "HalconApp") -> None:
+    def _cmd_open_image(self: "InspectorApp") -> None:
         path = filedialog.askopenfilename(
             title="\u958b\u555f\u5716\u7247",
             filetypes=[
@@ -94,7 +94,7 @@ class ImageOpsMixin:
             except Exception as exc:
                 self._show_error("\u7121\u6cd5\u8f09\u5165\u5716\u7247", exc)
 
-    def _cmd_open_dir(self: "HalconApp") -> None:
+    def _cmd_open_dir(self: "InspectorApp") -> None:
         d = filedialog.askdirectory(title="\u958b\u555f\u5716\u7247\u8cc7\u6599\u593e")
         if not d:
             return
@@ -105,7 +105,7 @@ class ImageOpsMixin:
             return
         self._load_all_images_to_pipeline(paths)
 
-    def _load_all_images_to_pipeline(self: "HalconApp", paths: list) -> None:
+    def _load_all_images_to_pipeline(self: "InspectorApp", paths: list) -> None:
         """Load all images from *paths* as sequential pipeline steps."""
         from PIL import Image as PILImage
 
@@ -142,7 +142,7 @@ class ImageOpsMixin:
             self._initial_loaded = True
         self.set_status(f"\u5df2\u8f09\u5165 {len(paths)} \u5f35\u5716\u7247")
 
-    def _cmd_save_image(self: "HalconApp") -> None:
+    def _cmd_save_image(self: "InspectorApp") -> None:
         step = self._pipeline_panel.get_current_step()
         if step is None:
             messagebox.showinfo("\u8cc7\u8a0a", "\u6c92\u6709\u53ef\u5132\u5b58\u7684\u5716\u7247")
@@ -160,7 +160,7 @@ class ImageOpsMixin:
             img.save(path)
             self.set_status(f"\u5df2\u5132\u5b58: {path}")
 
-    def _cmd_save_all(self: "HalconApp") -> None:
+    def _cmd_save_all(self: "InspectorApp") -> None:
         steps = self._pipeline_panel.get_all_steps()
         if not steps:
             messagebox.showinfo("\u8cc7\u8a0a", "\u6c92\u6709\u53ef\u5132\u5b58\u7684\u6b65\u9a5f")
@@ -183,7 +183,7 @@ class ImageOpsMixin:
     # Undo / Redo
     # ==================================================================
 
-    def _cmd_undo(self: "HalconApp") -> None:
+    def _cmd_undo(self: "InspectorApp") -> None:
         if not self._undo_stack:
             return
         current = self._pipeline_panel.get_current_index()
@@ -191,7 +191,7 @@ class ImageOpsMixin:
         target = self._undo_stack.pop()
         self._pipeline_panel.select_step(target)
 
-    def _cmd_redo(self: "HalconApp") -> None:
+    def _cmd_redo(self: "InspectorApp") -> None:
         if not self._redo_stack:
             return
         current = self._pipeline_panel.get_current_index()
@@ -203,25 +203,25 @@ class ImageOpsMixin:
     # View commands
     # ==================================================================
 
-    def _cmd_fit(self: "HalconApp") -> None:
+    def _cmd_fit(self: "InspectorApp") -> None:
         self._viewer.fit_to_window()
 
-    def _cmd_zoom_in(self: "HalconApp") -> None:
+    def _cmd_zoom_in(self: "InspectorApp") -> None:
         self._viewer.zoom_in()
 
-    def _cmd_zoom_out(self: "HalconApp") -> None:
+    def _cmd_zoom_out(self: "InspectorApp") -> None:
         self._viewer.zoom_out()
 
-    def _cmd_actual_size(self: "HalconApp") -> None:
+    def _cmd_actual_size(self: "InspectorApp") -> None:
         self._viewer.zoom_to_actual()
 
-    def _cmd_toggle_grid(self: "HalconApp", state: bool = False) -> None:
+    def _cmd_toggle_grid(self: "InspectorApp", state: bool = False) -> None:
         self._viewer.set_grid(state)
 
-    def _cmd_toggle_crosshair(self: "HalconApp", state: bool = False) -> None:
+    def _cmd_toggle_crosshair(self: "InspectorApp", state: bool = False) -> None:
         self._viewer.set_crosshair(state)
 
-    def _cmd_histogram(self: "HalconApp") -> None:
+    def _cmd_histogram(self: "InspectorApp") -> None:
         from dl_anomaly.gui.dialogs import HistogramDialog
 
         step = self._pipeline_panel.get_current_step()
@@ -230,13 +230,13 @@ class ImageOpsMixin:
             return
         HistogramDialog(self, step.array, title_text=f"\u76f4\u65b9\u5716 - {step.name}")
 
-    def _cmd_toggle_loss_curve(self: "HalconApp") -> None:
+    def _cmd_toggle_loss_curve(self: "InspectorApp") -> None:
         if self._viewer._loss_panel_visible:
             self._viewer.hide_loss_panel()
         else:
             self._viewer.show_loss_panel()
 
-    def _cmd_reconstruction_compare(self: "HalconApp") -> None:
+    def _cmd_reconstruction_compare(self: "InspectorApp") -> None:
         from dl_anomaly.gui.dialogs import ReconstructionDialog
 
         steps = self._pipeline_panel.get_all_steps()
@@ -252,7 +252,7 @@ class ImageOpsMixin:
             return
         ReconstructionDialog(self, original, reconstruction)
 
-    def _cmd_compare_steps(self: "HalconApp") -> None:
+    def _cmd_compare_steps(self: "InspectorApp") -> None:
         """Open a subtraction-based image comparison dialog with rules."""
         from dl_anomaly.gui.compare_dialog import CompareDialog
 
@@ -262,12 +262,12 @@ class ImageOpsMixin:
             return
         CompareDialog(self, items, fetch_steps_cb=self._collect_compare_items)
 
-    def _collect_compare_items(self: "HalconApp"):
+    def _collect_compare_items(self: "InspectorApp"):
         """Return all pipeline steps as (index, name, array) list."""
         steps = self._pipeline_panel.get_all_steps()
         return [(i, s.name, s.array) for i, s in enumerate(steps)]
 
-    def _cmd_batch_compare_steps(self: "HalconApp") -> None:
+    def _cmd_batch_compare_steps(self: "InspectorApp") -> None:
         """Open the batch 1-to-N image comparison dialog."""
         from dl_anomaly.gui.batch_compare_dialog import BatchCompareDialog
 
@@ -278,7 +278,7 @@ class ImageOpsMixin:
         BatchCompareDialog(self, items,
                            fetch_steps_cb=self._collect_compare_items)
 
-    def _cmd_delete_step(self: "HalconApp") -> None:
+    def _cmd_delete_step(self: "InspectorApp") -> None:
         idx = self._pipeline_panel.get_current_index()
         if idx >= 0:
             self._on_pipeline_step_delete(idx)
@@ -287,7 +287,7 @@ class ImageOpsMixin:
     # Model commands
     # ==================================================================
 
-    def _cmd_train(self: "HalconApp") -> None:
+    def _cmd_train(self: "InspectorApp") -> None:
         from dl_anomaly.gui.dialogs import TrainingDialog
 
         def on_complete(result: Dict[str, Any]) -> None:
@@ -308,7 +308,7 @@ class ImageOpsMixin:
 
         dlg = TrainingDialog(self, self.config, on_complete=on_complete)
 
-    def _cmd_load_model(self: "HalconApp") -> None:
+    def _cmd_load_model(self: "InspectorApp") -> None:
         path = filedialog.askopenfilename(
             title="\u8f09\u5165 Checkpoint",
             filetypes=[("PyTorch Checkpoint", "*.pt")],
@@ -317,7 +317,7 @@ class ImageOpsMixin:
         if path:
             self._load_inference_pipeline(path)
 
-    def _load_inference_pipeline(self: "HalconApp", path: str) -> None:
+    def _load_inference_pipeline(self: "InspectorApp", path: str) -> None:
         try:
             from dl_anomaly.pipeline.inference import InferencePipeline
             self._inference_pipeline = InferencePipeline(path, device=self.config.device)
@@ -331,7 +331,7 @@ class ImageOpsMixin:
         except Exception as exc:
             self._show_error("\u6a21\u578b\u8f09\u5165\u5931\u6557", exc)
 
-    def _cmd_save_checkpoint(self: "HalconApp") -> None:
+    def _cmd_save_checkpoint(self: "InspectorApp") -> None:
         if self._model is None:
             messagebox.showinfo("\u8cc7\u8a0a", "\u6c92\u6709\u53ef\u5132\u5b58\u7684\u6a21\u578b")
             return
@@ -354,7 +354,7 @@ class ImageOpsMixin:
         torch.save(state, path)
         self.set_status(f"Checkpoint \u5df2\u5132\u5b58: {path}")
 
-    def _cmd_model_info(self: "HalconApp") -> None:
+    def _cmd_model_info(self: "InspectorApp") -> None:
         from dl_anomaly.gui.dialogs import ModelInfoDialog
 
         if self._model is None:
@@ -362,7 +362,7 @@ class ImageOpsMixin:
             return
         ModelInfoDialog(self, self._model, self.config, self._model_state)
 
-    def _cmd_compute_threshold(self: "HalconApp") -> None:
+    def _cmd_compute_threshold(self: "InspectorApp") -> None:
         if self._inference_pipeline is None:
             messagebox.showinfo("\u8cc7\u8a0a", "\u8acb\u5148\u8f09\u5165\u6a21\u578b")
             return
@@ -405,7 +405,7 @@ class ImageOpsMixin:
     # Inspection commands
     # ==================================================================
 
-    def _cmd_inspect_single(self: "HalconApp") -> None:
+    def _cmd_inspect_single(self: "InspectorApp") -> None:
         """Run inspection on a single image (or the currently loaded one)."""
         if self._inference_pipeline is None:
             messagebox.showinfo("\u8cc7\u8a0a", "\u8acb\u5148\u8f09\u5165\u6a21\u578b (Checkpoint)")
@@ -437,7 +437,7 @@ class ImageOpsMixin:
         self._run_in_bg(_compute, on_done=_done, on_error=_error,
                         status_msg=f"\u6aa2\u6e2c\u4e2d: {Path(path).name}")
 
-    def _display_inspection_result(self: "HalconApp", result, path: str) -> None:
+    def _display_inspection_result(self: "InspectorApp", result, path: str) -> None:
         """Populate the pipeline with all inspection steps."""
         from dl_anomaly.pipeline.inference import InspectionResult
         from dl_anomaly.core.anomaly_scorer import AnomalyScorer
@@ -498,7 +498,7 @@ class ImageOpsMixin:
             message=f"缺陷區域: {len(result.defect_regions)}",
         )
 
-    def _cmd_batch_inspect(self: "HalconApp") -> None:
+    def _cmd_batch_inspect(self: "InspectorApp") -> None:
         from dl_anomaly.gui.dialogs import BatchInspectDialog
 
         if self._inference_pipeline is None:
@@ -518,7 +518,7 @@ class ImageOpsMixin:
     # DL-specific operations (from menu)
     # ==================================================================
 
-    def _cmd_run_autoencoder(self: "HalconApp") -> None:
+    def _cmd_run_autoencoder(self: "InspectorApp") -> None:
         """Feed current image through the autoencoder and add reconstruction as a step."""
         if self._inference_pipeline is None:
             messagebox.showinfo("\u8cc7\u8a0a", "\u8acb\u5148\u8f09\u5165\u6a21\u578b")
@@ -555,7 +555,7 @@ class ImageOpsMixin:
 
         self._run_in_bg(_compute, on_done=_done, status_msg="\u57f7\u884c\u81ea\u52d5\u7de8\u78bc\u5668...")
 
-    def _cmd_compute_error_map(self: "HalconApp") -> None:
+    def _cmd_compute_error_map(self: "InspectorApp") -> None:
         """Compute pixel-wise error between 'Original' and 'Reconstruction' steps."""
         steps = self._pipeline_panel.get_all_steps()
         original = None
@@ -589,7 +589,7 @@ class ImageOpsMixin:
 
         self._run_in_bg(_compute, on_done=_done, status_msg="\u8a08\u7b97\u8aa4\u5dee\u5716...")
 
-    def _cmd_apply_ssim(self: "HalconApp") -> None:
+    def _cmd_apply_ssim(self: "InspectorApp") -> None:
         """Compute SSIM map between 'Original' and 'Reconstruction'."""
         steps = self._pipeline_panel.get_all_steps()
         original = None
@@ -622,7 +622,7 @@ class ImageOpsMixin:
 
         self._run_in_bg(_compute, on_done=_done, status_msg="\u8a08\u7b97 SSIM \u5716...")
 
-    def _cmd_apply_threshold_mask(self: "HalconApp") -> None:
+    def _cmd_apply_threshold_mask(self: "InspectorApp") -> None:
         """Threshold the error/smoothed map to produce a binary mask."""
         step = self._pipeline_panel.get_current_step()
         if step is None:
@@ -643,7 +643,7 @@ class ImageOpsMixin:
         mask_rgb = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
         self._add_pipeline_step("\u95be\u503c\u906e\u7f69", mask_rgb)
 
-    def _rerun_inspection_with_params(self: "HalconApp") -> None:
+    def _rerun_inspection_with_params(self: "InspectorApp") -> None:
         """Re-run inspection on the current image with updated parameters."""
         if self._inference_pipeline is None or self._current_image_path is None:
             return
@@ -723,7 +723,7 @@ class ImageOpsMixin:
     # Help
     # ==================================================================
 
-    def _cmd_shortcuts(self: "HalconApp") -> None:
+    def _cmd_shortcuts(self: "InspectorApp") -> None:
         shortcuts = (
             f"{display('O'):16s}\u958b\u555f\u5716\u7247\n"
             f"{display('S'):16s}\u5132\u5b58\u5716\u7247\n"
@@ -750,10 +750,10 @@ class ImageOpsMixin:
         )
         messagebox.showinfo("\u5feb\u6377\u9375", shortcuts)
 
-    def _cmd_about(self: "HalconApp") -> None:
+    def _cmd_about(self: "InspectorApp") -> None:
         messagebox.showinfo(
             "\u95dc\u65bc",
-            "CV \u7f3a\u9677\u5075\u6e2c\u5668 v2.0 - HALCON HDevelop Style\n\n"
+            "CV \u7f3a\u9677\u5075\u6e2c\u5668 v2.0 - Industrial Vision Style\n\n"
             "\u6574\u5408\u5f0f\u5de5\u696d\u6aa2\u6e2c\u7cfb\u7d71\n\n"
             "\u2501 DL \u6a21\u5f0f (Autoencoder)\n"
             "  PyTorch CNN \u81ea\u52d5\u7de8\u78bc\u5668 + PatchCore\n"
@@ -768,7 +768,7 @@ class ImageOpsMixin:
     # Recipe commands
     # ==================================================================
 
-    def _cmd_save_recipe(self: "HalconApp") -> None:
+    def _cmd_save_recipe(self: "InspectorApp") -> None:
         """Export the current pipeline as a recipe JSON file."""
         from dl_anomaly.core.recipe import Recipe
 
@@ -785,7 +785,7 @@ class ImageOpsMixin:
             recipe.save(path)
             self.set_status(f"\u6d41\u7a0b\u5df2\u5132\u5b58: {Path(path).name} ({len(recipe.steps)} \u6b65)")
 
-    def _cmd_load_and_apply_recipe(self: "HalconApp") -> None:
+    def _cmd_load_and_apply_recipe(self: "InspectorApp") -> None:
         """Open the recipe-apply dialog for windowed multi-image recipe application."""
         from dl_anomaly.gui.recipe_apply_dialog import RecipeApplyDialog
 
@@ -797,7 +797,7 @@ class ImageOpsMixin:
         RecipeApplyDialog(self, add_step_cb=_add_step,
                           set_status_cb=self.set_status)
 
-    def _cmd_batch_apply_recipe(self: "HalconApp") -> None:
+    def _cmd_batch_apply_recipe(self: "InspectorApp") -> None:
         """Batch-apply a recipe to a folder of images."""
         path = filedialog.askopenfilename(
             title="\u9078\u64c7\u6d41\u7a0b\u6a94\u6848",
@@ -884,7 +884,7 @@ class ImageOpsMixin:
     # Settings
     # ==================================================================
 
-    def _cmd_settings(self: "HalconApp") -> None:
+    def _cmd_settings(self: "InspectorApp") -> None:
         from dl_anomaly.gui.dialogs import SettingsDialog
 
         SettingsDialog(self, self.config)
