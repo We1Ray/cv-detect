@@ -48,6 +48,8 @@ from dl_anomaly.gui.pipeline_panel import PipelinePanel
 from dl_anomaly.gui.properties_panel import PropertiesPanel
 from dl_anomaly.gui.toolbar import Toolbar
 
+from dl_anomaly.gui.quick_actions_panel import QuickActionsPanel
+from dl_anomaly.gui.results_panel import ResultsPanel
 from dl_anomaly.gui.mixins_menu import MenuMixin
 from dl_anomaly.gui.mixins_image_ops import ImageOpsMixin
 from dl_anomaly.gui.mixins_dialogs import DialogMixin
@@ -324,7 +326,40 @@ class InspectorApp(
         self._dashboard_panel = DashboardPanel(spc_frame)
         self._dashboard_panel.pack(fill=tk.BOTH, expand=True)
 
-        # Tab 4: History
+        # Tab 4: Results
+        results_frame = ttk.Frame(self._right_notebook)
+        self._right_notebook.add(results_frame, text=" \u7d50\u679c ")
+        self._results_panel = ResultsPanel(results_frame)
+        self._results_panel.pack(fill=tk.BOTH, expand=True)
+
+        # Tab 5: Quick Actions
+        qa_frame = ttk.Frame(self._right_notebook)
+        self._right_notebook.add(qa_frame, text=" \u5feb\u6377 ")
+        self._quick_actions = QuickActionsPanel(qa_frame, callbacks={
+            "dl_train": self._cmd_train,
+            "dl_load": self._cmd_load_model,
+            "dl_inspect": self._cmd_inspect_single,
+            "dl_batch": self._cmd_batch_inspect,
+            "dl_compute_threshold": self._cmd_compute_threshold,
+            "vm_train": self._cmd_vm_train,
+            "vm_load": self._cmd_vm_load_model,
+            "vm_inspect": self._cmd_vm_inspect_single,
+            "vm_batch": self._cmd_vm_inspect_batch,
+            "vm_threshold_viz": self._cmd_vm_show_threshold_viz,
+            "threshold": self._open_threshold_dialog,
+            "blob": self._open_blob_analysis,
+            "shape_match": self._open_shape_matching,
+            "metrology": self._open_metrology,
+            "roi": self._open_roi_manager,
+            "patchcore": self._open_advanced_models,
+            "inspection_tools": self._open_inspection_tools,
+            "engineering_tools": self._open_engineering_tools,
+            "mvp_tools": self._open_mvp_tools,
+            "auto_tune": self._open_auto_tune,
+        })
+        self._quick_actions.pack(fill=tk.BOTH, expand=True)
+
+        # Tab 6: History
         history_frame = ttk.Frame(self._right_notebook)
         self._right_notebook.add(history_frame, text=" \u6b77\u53f2 ")
         self._history_panel = HistoryPanel(history_frame)
@@ -1053,6 +1088,18 @@ class InspectorApp(
         """
         self._judgment_indicator.set_result(is_pass, score, message)
         self._dashboard_panel.update_from_result(is_pass, score)
+        # Feed to results panel
+        defect_count = 0
+        if message:
+            import re
+            m = re.search(r'(\d+)', message)
+            if m:
+                defect_count = int(m.group(1))
+        img_name = Path(self._current_image_path).name if self._current_image_path else ""
+        self._results_panel.add_result(
+            is_pass=is_pass, score=score,
+            defect_count=defect_count, image_name=img_name,
+        )
         # Also update live panel if running
         if self._live_panel.is_running:
             img_path = self._current_image_path or ""
