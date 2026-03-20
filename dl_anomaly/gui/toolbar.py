@@ -63,12 +63,19 @@ class Toolbar(ttk.Frame):
         self._add_button("1:1", "actual_size", "\u539f\u59cb\u5927\u5c0f")  # 1:1
         self._add_sep()
 
-        # ---- Model group ----
-        self._add_group_label("\u6a21\u578b")
-        self._add_button("\U0001F3AF", "train", "\u8a13\u7df4\u6a21\u578b (F6)")  # Train
-        self._add_button("\U0001F4E6", "load_model", "\u8f09\u5165\u6a21\u578b")  # Load Model
-        self._add_button("\U0001F50D", "inspect", "\u6aa2\u6e2c\u5716\u7247 (F5)")  # Inspect
-        self._add_button("\U0001F4CB", "batch", "\u6279\u6b21\u6aa2\u6e2c")  # Batch
+        # ---- DL Model group ----
+        self._add_group_label("DL")
+        self._add_button("\U0001F3AF", "train", "DL \u8a13\u7df4 (F6)")  # Train
+        self._add_button("\U0001F4E6", "load_model", "DL \u8f09\u5165 Checkpoint")  # Load
+        self._add_button("\U0001F50D", "inspect", "DL \u6aa2\u6e2c (F5)")  # Inspect
+        self._add_button("\U0001F4CB", "batch", "DL \u6279\u6b21\u6aa2\u6e2c")  # Batch
+        self._add_sep()
+
+        # ---- VM Model group ----
+        self._add_group_label("VM")
+        self._add_button("\U0001F4CA", "vm_train", "VM \u8a13\u7df4 (\u7d71\u8a08\u6a21\u578b)")
+        self._add_button("\U0001F4C1", "vm_load", "VM \u8f09\u5165\u6a21\u578b (.npz)")
+        self._add_button("\U0001F50E", "vm_inspect", "VM \u6aa2\u6e2c")
         self._add_sep()
 
         # ---- Vision tools ----

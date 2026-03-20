@@ -279,45 +279,56 @@ class InspectorApp(
         )
         self._paned.add(self._viewer, weight=1)
 
-        # -- Right: Properties + Operations --
+        # -- Right: Properties + Operations (Tabbed layout) --
         right_frame = ttk.Frame(self._paned)
         self._paned.add(right_frame, weight=0)
 
         # OK/NG Judgment Indicator (top of right panel, always visible)
-        self._judgment_indicator = JudgmentIndicator(right_frame, height=100)
-        self._judgment_indicator.pack(fill=tk.X, padx=2, pady=(2, 4))
+        self._judgment_indicator = JudgmentIndicator(right_frame, height=80)
+        self._judgment_indicator.pack(fill=tk.X, padx=2, pady=(2, 2))
 
-        # Right panel uses PanedWindow for resizable sections
-        right_paned = ttk.PanedWindow(right_frame, orient=tk.VERTICAL)
-        right_paned.pack(fill=tk.BOTH, expand=True)
-
-        self._props_panel = PropertiesPanel(right_paned)
+        # Properties panel (always visible, compact)
+        self._props_panel = PropertiesPanel(right_frame)
         self._props_panel.set_region_highlight_callback(self._on_region_highlight)
         self._props_panel.set_region_remove_callback(self._on_region_remove)
-        right_paned.add(self._props_panel, weight=0)
+        self._props_panel.pack(fill=tk.X, padx=2, pady=(0, 2))
 
+        # Tabbed notebook for Operations / Live / SPC / History
+        self._right_notebook = ttk.Notebook(right_frame)
+        self._right_notebook.pack(fill=tk.BOTH, expand=True, padx=2, pady=(0, 2))
+
+        # Tab 1: Operations panel (parameter tuning)
+        ops_frame = ttk.Frame(self._right_notebook)
+        self._right_notebook.add(ops_frame, text=" \u64cd\u4f5c ")
         self._ops_panel = OperationsPanel(
-            right_paned,
+            ops_frame,
             on_apply=self._on_operation_applied,
             get_current_image=self._get_current_image,
         )
-        right_paned.add(self._ops_panel, weight=1)
+        self._ops_panel.pack(fill=tk.BOTH, expand=True)
 
-        # Live Inspection Panel
+        # Tab 2: Live Inspection
+        live_frame = ttk.Frame(self._right_notebook)
+        self._right_notebook.add(live_frame, text=" \u5373\u6642\u6aa2\u6e2c ")
         self._live_panel = LiveInspectionPanel(
-            right_paned,
+            live_frame,
             on_start=self._on_live_start,
             on_stop=self._on_live_stop,
             on_inspect_single=self._on_live_inspect_single,
         )
-        right_paned.add(self._live_panel, weight=0)
+        self._live_panel.pack(fill=tk.BOTH, expand=True)
 
-        # SPC Dashboard Panel
-        self._dashboard_panel = DashboardPanel(right_paned)
-        right_paned.add(self._dashboard_panel, weight=0)
+        # Tab 3: SPC Dashboard
+        spc_frame = ttk.Frame(self._right_notebook)
+        self._right_notebook.add(spc_frame, text=" SPC ")
+        self._dashboard_panel = DashboardPanel(spc_frame)
+        self._dashboard_panel.pack(fill=tk.BOTH, expand=True)
 
-        self._history_panel = HistoryPanel(right_paned)
-        right_paned.add(self._history_panel, weight=0)
+        # Tab 4: History
+        history_frame = ttk.Frame(self._right_notebook)
+        self._right_notebook.add(history_frame, text=" \u6b77\u53f2 ")
+        self._history_panel = HistoryPanel(history_frame)
+        self._history_panel.pack(fill=tk.BOTH, expand=True)
 
         # Initialise operations panel with config values
         self._ops_panel.set_params(
