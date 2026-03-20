@@ -28,9 +28,24 @@ class VMOpsMixin:
     # ==================================================================
 
     def _get_vm_config(self: "InspectorApp") -> "VMConfig":
-        """Return a VMConfig loaded from .env (cached per call)."""
+        """Return a VMConfig with values from the Operations Panel sliders.
+
+        Falls back to .env defaults for fields not exposed in the panel.
+        """
         from dl_anomaly.core.vm_config import VMConfig
-        return VMConfig.from_env()
+        cfg = VMConfig.from_env()
+        # Override with live panel values if panel exists
+        if hasattr(self, '_ops_panel') and self._ops_panel is not None:
+            cfg = cfg.update(
+                abs_threshold=self._ops_panel.get_vm_abs_threshold(),
+                var_threshold=self._ops_panel.get_vm_var_threshold(),
+                gaussian_blur_kernel=self._ops_panel.get_vm_blur_kernel(),
+                morph_kernel_size=self._ops_panel.get_vm_morph_kernel(),
+                min_defect_area=self._ops_panel.get_vm_min_area(),
+                enable_multiscale=self._ops_panel.get_vm_multiscale(),
+                scale_levels=self._ops_panel.get_vm_scale_levels(),
+            )
+        return cfg
 
     # ==================================================================
     # VM Model commands
