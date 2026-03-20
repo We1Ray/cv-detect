@@ -95,6 +95,19 @@ class InspectorApp(
         # Persistent application state
         self._app_state = AppState("dl_anomaly")
 
+        # Restore saved language preference
+        saved_lang = self._app_state._data.get("language")
+        if saved_lang:
+            from shared.i18n import set_language
+            try:
+                set_language(saved_lang)
+            except FileNotFoundError:
+                pass
+
+        # Language variable for menu radiobuttons
+        from shared.i18n import get_language
+        self._lang_var = tk.StringVar(value=get_language())
+
         # Core state
         self._inference_pipeline = None  # InferencePipeline instance
         self._model = None
@@ -111,6 +124,9 @@ class InspectorApp(
         self._script_editor = None
         self._script_editor_visible = False
         self._current_region = None
+
+        # SPC monitoring (lazily initialised via _init_spc_monitor)
+        self._spc_monitor = None
 
         # Build UI
         self._build_menu()
@@ -1022,6 +1038,7 @@ class InspectorApp(
         """Update the OK/NG judgment indicator with inspection results.
 
         Called after each inspection completes to provide visual feedback.
+        Also feeds the result into the SPC monitor if active.
         """
         self._judgment_indicator.set_result(is_pass, score, message)
         self._dashboard_panel.update_from_result(is_pass, score)
@@ -1029,6 +1046,188 @@ class InspectorApp(
         if self._live_panel.is_running:
             img_path = self._current_image_path or ""
             self._live_panel.update_result(is_pass, score, img_path)
+
+        # Feed result to SPC monitor and handle any triggered alerts
+        if self._spc_monitor is not None:
+            from shared.spc_alert import AlertLevel
+            alerts = self._spc_monitor.add_result(score, is_pass)
+            for alert in alerts:
+                self._handle_spc_alert(alert)
+
+    # ==================================================================
+    # SPC monitoring
+    # ==================================================================
+
+    def _init_spc_monitor(
+        self,
+        window_size: int = 50,
+        cpk_threshold: float = 1.33,
+        yield_threshold: float = 95.0,
+        consecutive_ng_limit: int = 3,
+        usl: float | None = None,
+        lsl: float | None = None,
+    ) -> None:
+        """Create or re-create the SPCMonitor with the given settings."""
+        from shared.spc_alert import SPCMonitor
+        self._spc_monitor = SPCMonitor(
+            window_size=window_size,
+            cpk_threshold=cpk_threshold,
+            yield_threshold=yield_threshold,
+            consecutive_ng_limit=consecutive_ng_limit,
+            usl=usl,
+            lsl=lsl,
+        )
+        self.set_status_success("SPC 監控已啟用")
+
+    def _handle_spc_alert(self, alert) -> None:
+        """Display an SPC alert to the user.
+
+        Non-critical alerts are shown as a brief status bar flash.
+        Critical alerts additionally trigger a non-modal messagebox
+        scheduled via ``self.after()`` to avoid blocking inspection flow.
+        """
+        from shared.spc_alert import AlertLevel
+
+        level_prefix = {
+            AlertLevel.INFO: "[INFO]",
+            AlertLevel.WARNING: "[WARNING]",
+            AlertLevel.CRITICAL: "[CRITICAL]",
+        }
+        prefix = level_prefix.get(alert.level, "[SPC]")
+        status_text = f"SPC {prefix} {alert.message}"
+        self._status_var.set(status_text)
+
+        # Flash colour based on severity
+        if alert.level == AlertLevel.CRITICAL:
+            style_name = "Critical.Status.TLabel"
+            # Ensure the style exists
+            style = ttk.Style()
+            style.configure(style_name, background="#c62828", foreground="#ffffff")
+            self._status_label.configure(style=style_name)
+            self.after(3000, lambda: self._status_label.configure(style="TLabel"))
+            # Schedule a non-modal warning dialog for critical alerts
+            self.after(100, lambda msg=alert.message: messagebox.showwarning(
+                "SPC Critical Alert", msg,
+            ))
+        elif alert.level == AlertLevel.WARNING:
+            style_name = "Warning.Status.TLabel"
+            style = ttk.Style()
+            style.configure(style_name, background="#e65100", foreground="#ffffff")
+            self._status_label.configure(style=style_name)
+            self.after(2000, lambda: self._status_label.configure(style="TLabel"))
+        else:
+            self._status_label.configure(style="Success.Status.TLabel")
+            self.after(1500, lambda: self._status_label.configure(style="TLabel"))
+
+    def _open_spc_settings(self) -> None:
+        """Open a dialog to configure SPC alert settings."""
+        dlg = tk.Toplevel(self)
+        dlg.title("SPC 警報設定")
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.resizable(False, False)
+        dlg.configure(bg="#2b2b2b")
+
+        pad = {"padx": 10, "pady": 4}
+        fg = "#e0e0e0"
+        bg = "#2b2b2b"
+        entry_bg = "#3c3c3c"
+
+        row = 0
+        tk.Label(dlg, text="SPC 警報參數設定", bg=bg, fg=fg,
+                 font=("Segoe UI", 12, "bold")).grid(
+            row=row, column=0, columnspan=2, **pad, sticky=tk.W)
+        row += 1
+
+        fields: list[tuple[str, str, str]] = [
+            ("滾動窗口大小:", "window_size", "50"),
+            ("Cpk 閾值:", "cpk_threshold", "1.33"),
+            ("良率閾值 (%):", "yield_threshold", "95.0"),
+            ("連續 NG 上限:", "consecutive_ng_limit", "3"),
+            ("規格上限 (USL):", "usl", ""),
+            ("規格下限 (LSL):", "lsl", ""),
+        ]
+
+        # Pre-fill from existing monitor if available
+        if self._spc_monitor is not None:
+            metrics = self._spc_monitor.get_current_metrics()
+            defaults = {
+                "window_size": str(self._spc_monitor._window_size),
+                "cpk_threshold": str(self._spc_monitor._cpk_threshold),
+                "yield_threshold": str(self._spc_monitor._yield_threshold),
+                "consecutive_ng_limit": str(self._spc_monitor._consecutive_ng_limit),
+                "usl": str(self._spc_monitor._usl) if self._spc_monitor._usl is not None else "",
+                "lsl": str(self._spc_monitor._lsl) if self._spc_monitor._lsl is not None else "",
+            }
+        else:
+            defaults = {f[1]: f[2] for f in fields}
+
+        entries: Dict[str, tk.Entry] = {}
+        for label_text, key, _ in fields:
+            tk.Label(dlg, text=label_text, bg=bg, fg=fg,
+                     font=("Segoe UI", 10), anchor=tk.W).grid(
+                row=row, column=0, sticky=tk.W, **pad)
+            entry = tk.Entry(dlg, bg=entry_bg, fg=fg, insertbackground=fg,
+                             font=("Segoe UI", 10), width=15)
+            entry.insert(0, defaults.get(key, ""))
+            entry.grid(row=row, column=1, sticky=tk.W, **pad)
+            entries[key] = entry
+            row += 1
+
+        # Enable/disable checkbox
+        enabled_var = tk.BooleanVar(value=self._spc_monitor is not None)
+        tk.Checkbutton(
+            dlg, text="啟用 SPC 監控", variable=enabled_var,
+            bg=bg, fg=fg, selectcolor="#3c3c3c", activebackground=bg,
+            activeforeground=fg, font=("Segoe UI", 10),
+        ).grid(row=row, column=0, columnspan=2, sticky=tk.W, **pad)
+        row += 1
+
+        def _apply() -> None:
+            if not enabled_var.get():
+                self._spc_monitor = None
+                self.set_status("SPC 監控已停用")
+                dlg.destroy()
+                return
+
+            try:
+                ws = int(entries["window_size"].get() or "50")
+                cpk_t = float(entries["cpk_threshold"].get() or "1.33")
+                yield_t = float(entries["yield_threshold"].get() or "95.0")
+                ng_lim = int(entries["consecutive_ng_limit"].get() or "3")
+                usl_str = entries["usl"].get().strip()
+                lsl_str = entries["lsl"].get().strip()
+                usl = float(usl_str) if usl_str else None
+                lsl = float(lsl_str) if lsl_str else None
+            except ValueError as exc:
+                messagebox.showerror("輸入錯誤", f"請輸入有效的數值: {exc}", parent=dlg)
+                return
+
+            self._init_spc_monitor(
+                window_size=ws,
+                cpk_threshold=cpk_t,
+                yield_threshold=yield_t,
+                consecutive_ng_limit=ng_lim,
+                usl=usl,
+                lsl=lsl,
+            )
+            dlg.destroy()
+
+        btn_frame = tk.Frame(dlg, bg=bg)
+        btn_frame.grid(row=row, column=0, columnspan=2, pady=10)
+        tk.Button(btn_frame, text="確定", bg="#3c3c3c", fg=fg,
+                  activebackground="#4a4a6e", activeforeground="#ffffff",
+                  relief=tk.FLAT, padx=20, pady=4, font=("Segoe UI", 10),
+                  command=_apply).pack(side=tk.LEFT, padx=8)
+        tk.Button(btn_frame, text="取消", bg="#3c3c3c", fg=fg,
+                  activebackground="#4a4a6e", activeforeground="#ffffff",
+                  relief=tk.FLAT, padx=20, pady=4, font=("Segoe UI", 10),
+                  command=dlg.destroy).pack(side=tk.LEFT, padx=8)
+
+        dlg.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - dlg.winfo_width()) // 2
+        y = self.winfo_y() + (self.winfo_height() - dlg.winfo_height()) // 2
+        dlg.geometry(f"+{x}+{y}")
 
     # ==================================================================
     # Close

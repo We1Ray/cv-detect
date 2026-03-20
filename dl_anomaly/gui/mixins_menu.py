@@ -5,6 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 from typing import TYPE_CHECKING
 
+from shared.i18n import available_languages
 from dl_anomaly.gui.platform_keys import accel, accel_shift
 
 if TYPE_CHECKING:
@@ -35,6 +36,19 @@ class MenuMixin:
         self._recent_menu = tk.Menu(file_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                                     activebackground="#3a3a5c", activeforeground="#ffffff")
         file_menu.add_cascade(label="\u6700\u8fd1\u958b\u555f", menu=self._recent_menu)
+        file_menu.add_separator()
+        lang_menu = tk.Menu(file_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
+                            activebackground="#3a3a5c", activeforeground="#ffffff")
+        _LANG_LABELS = {"en": "English", "zh-TW": "\u7e41\u9ad4\u4e2d\u6587", "zh-CN": "\u7b80\u4f53\u4e2d\u6587"}
+        for lang_code in available_languages():
+            label = _LANG_LABELS.get(lang_code, lang_code)
+            lang_menu.add_radiobutton(
+                label=label,
+                variable=self._lang_var,
+                value=lang_code,
+                command=lambda lc=lang_code: self._cmd_switch_language(lc),
+            )
+        file_menu.add_cascade(label="\u8a9e\u8a00 / Language", menu=lang_menu)
         file_menu.add_separator()
         file_menu.add_command(label="\u7d50\u675f", command=self._on_close)
         menubar.add_cascade(label="\u6a94\u6848", menu=file_menu)
@@ -312,6 +326,8 @@ class MenuMixin:
         tools_menu.add_command(label="MVP \u5de5\u5177 (\u76f8\u6a5f/\u6d41\u7a0b/\u5831\u8868)...", command=self._open_mvp_tools, accelerator=accel_shift("V"))
         tools_menu.add_separator()
         tools_menu.add_command(label="\u81ea\u52d5\u95be\u503c\u6821\u6e96...", command=self._open_auto_tune, accelerator=accel_shift("A"))
+        tools_menu.add_separator()
+        tools_menu.add_command(label="SPC \u8b66\u5831\u8a2d\u5b9a...", command=self._open_spc_settings)
         menubar.add_cascade(label="\u5de5\u5177", menu=tools_menu)
 
         # -- Help --

@@ -888,3 +888,24 @@ class ImageOpsMixin:
         from dl_anomaly.gui.dialogs import SettingsDialog
 
         SettingsDialog(self, self.config)
+
+    def _cmd_switch_language(self: "InspectorApp", lang: str) -> None:
+        """Switch UI language and persist the preference."""
+        from shared.i18n import set_language, get_language
+
+        if lang == get_language():
+            return
+        try:
+            set_language(lang)
+        except FileNotFoundError:
+            messagebox.showerror("Error", f"Translation file not found for: {lang}")
+            return
+        self._app_state._data["language"] = lang
+        self._app_state._save()
+        self._lang_var.set(lang)
+        self.title(f"CV \u7f3a\u9677\u5075\u6e2c\u5668 v2.0 [{lang}]")
+        messagebox.showinfo(
+            "\u8a9e\u8a00 / Language",
+            "\u8a9e\u8a00\u5df2\u5207\u63db\u3002\u8acb\u91cd\u65b0\u555f\u52d5\u61c9\u7528\u7a0b\u5f0f\u4ee5\u5b8c\u6574\u5957\u7528\u3002\n"
+            "Language changed. Please restart the app for full effect.",
+        )
