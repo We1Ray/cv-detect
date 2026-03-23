@@ -28,6 +28,7 @@ import json
 import logging
 import math
 import re
+import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -41,6 +42,10 @@ import numpy as np
 from shared.op_logger import log_operation
 
 logger = logging.getLogger(__name__)
+
+# Leaked thread tracking for custom step exec-with-timeout.
+_LEAKED_THREAD_COUNT = 0
+_MAX_LEAKED_THREADS = 5
 
 
 # ====================================================================== #
@@ -1301,6 +1306,8 @@ class CustomStep(FlowStep):
         _DISALLOWED_NODES: Tuple[type, ...] = (
             ast.Import,
             ast.ImportFrom,
+            ast.Global,
+            ast.Nonlocal,
         )
         # Built-in names that must not be called.
         _DANGEROUS_BUILTINS = frozenset({
@@ -1335,6 +1342,19 @@ class CustomStep(FlowStep):
                         f"'{node.attr}' is not allowed."
                     ),
                 )
+            # Block string constants containing dunder patterns (prevents indirect access).
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) and re.search(r'__\w+__', node.value):
+                return StepResult(
+                    step_name=self.name,
+                    step_type=self.step_type,
+                    success=False,
+                    data={},
+                    elapsed_ms=_elapsed_ms(t0),
+                    message=(
+                        "Security violation: string constants containing "
+                        "dunder patterns are not allowed."
+                    ),
+                )
             # Block calls to dangerous built-in functions.
             if (
                 isinstance(node, ast.Call)
@@ -1362,7 +1382,7 @@ class CustomStep(FlowStep):
             "len": len, "list": list, "map": map, "max": max,
             "min": min, "print": print, "range": range, "round": round,
             "set": set, "sorted": sorted, "str": str, "sum": sum,
-            "tuple": tuple, "type": type, "zip": zip,
+            "tuple": tuple, "zip": zip,
         }
         namespace: Dict[str, Any] = {
             "__builtins__": _SAFE_BUILTINS,
@@ -1371,9 +1391,48 @@ class CustomStep(FlowStep):
             "math": math,
         }
 
+        def _exec_with_timeout(code_obj: Any, ns: Dict[str, Any], timeout_sec: int = 5) -> None:
+            """Execute code with a timeout to prevent infinite loops."""
+            global _LEAKED_THREAD_COUNT
+            if _LEAKED_THREAD_COUNT >= _MAX_LEAKED_THREADS:
+                raise RuntimeError(
+                    f"Too many timed-out custom step threads ({_LEAKED_THREAD_COUNT}). "
+                    "Restart the application to recover."
+                )
+
+            exc_holder: list = [None]
+
+            def _target() -> None:
+                try:
+                    exec(code_obj, ns)  # noqa: S102
+                except Exception as e:
+                    exc_holder[0] = e
+
+            thread = threading.Thread(target=_target, daemon=True)
+            thread.start()
+            thread.join(timeout=timeout_sec)
+            if thread.is_alive():
+                _LEAKED_THREAD_COUNT += 1
+                logger.warning(
+                    "Custom step execution timed out. Leaked thread count: %d/%d",
+                    _LEAKED_THREAD_COUNT, _MAX_LEAKED_THREADS,
+                )
+                raise TimeoutError("Custom step execution timed out.")
+            if exc_holder[0] is not None:
+                raise exc_holder[0]
+
         try:
             code_obj = compile(tree, f"<custom:{self.name}>", "exec")
-            exec(code_obj, namespace)  # noqa: S102
+            _exec_with_timeout(code_obj, namespace)
+        except TimeoutError as exc:
+            return StepResult(
+                step_name=self.name,
+                step_type=self.step_type,
+                success=False,
+                data={},
+                elapsed_ms=_elapsed_ms(t0),
+                message=f"Execution timeout: {exc}",
+            )
         except Exception as exc:
             return StepResult(
                 step_name=self.name,

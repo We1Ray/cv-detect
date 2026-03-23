@@ -10,9 +10,22 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Optional
 
+import platform as _platform
+
 import cv2
 import numpy as np
 from scipy.ndimage import gaussian_filter
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
 
 
 class OperationsPanel(ttk.LabelFrame):
@@ -55,10 +68,25 @@ class OperationsPanel(ttk.LabelFrame):
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Enable mouse wheel scrolling
+        # Enable mouse wheel scrolling (only when pointer is over this panel)
+        import platform as _platform
+
         def _on_mousewheel(event):
-            canvas.yview_scroll(-1 * (event.delta // 120), "units")
-        canvas.bind_all("<MouseWheel>", _on_mousewheel, add="+")
+            if _platform.system() == "Darwin":
+                canvas.yview_scroll(-event.delta, "units")
+            else:
+                canvas.yview_scroll(-event.delta // 120, "units")
+
+        def _bind_scroll(event=None):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_scroll(event=None):
+            canvas.unbind_all("<MouseWheel>")
+
+        canvas.bind("<Enter>", _bind_scroll)
+        canvas.bind("<Leave>", _unbind_scroll)
+        self._scroll_frame.bind("<Enter>", _bind_scroll)
+        self._scroll_frame.bind("<Leave>", _unbind_scroll)
 
         parent = self._scroll_frame
 
@@ -111,7 +139,7 @@ class OperationsPanel(ttk.LabelFrame):
             variable=self._vm_multiscale_var,
             bg="#2b2b2b", fg="#e0e0e0", selectcolor="#3c3c3c",
             activebackground="#2b2b2b", activeforeground="#e0e0e0",
-            font=("Segoe UI", 8),
+            font=(_FONT_FAMILY, 8),
         )
         cb.pack(fill=tk.X, padx=6, pady=1)
 
@@ -155,7 +183,7 @@ class OperationsPanel(ttk.LabelFrame):
     def _add_section_header(parent, text: str) -> None:
         ttk.Label(
             parent, text=text,
-            font=("Segoe UI", 9, "bold"),
+            font=(_FONT_FAMILY, 9, "bold"),
         ).pack(fill=tk.X, padx=6, pady=(6, 2))
 
     # ------------------------------------------------------------------
@@ -168,9 +196,9 @@ class OperationsPanel(ttk.LabelFrame):
     ) -> None:
         frame = ttk.Frame(parent)
         frame.pack(fill=tk.X, padx=6, pady=1)
-        ttk.Label(frame, text=label, font=("Segoe UI", 8)).pack(side=tk.LEFT)
+        ttk.Label(frame, text=label, font=(_FONT_FAMILY, 8)).pack(side=tk.LEFT)
         fmt = ".1f" if resolution >= 0.1 else ".2f"
-        val_label = ttk.Label(frame, text=f"{var.get():{fmt}}", font=("Segoe UI", 8), width=6)
+        val_label = ttk.Label(frame, text=f"{var.get():{fmt}}", font=(_FONT_FAMILY, 8), width=6)
         val_label.pack(side=tk.RIGHT)
 
         slider = tk.Scale(
@@ -188,8 +216,8 @@ class OperationsPanel(ttk.LabelFrame):
     ) -> None:
         frame = ttk.Frame(parent)
         frame.pack(fill=tk.X, padx=6, pady=1)
-        ttk.Label(frame, text=label, font=("Segoe UI", 8)).pack(side=tk.LEFT)
-        val_label = ttk.Label(frame, text=str(var.get()), font=("Segoe UI", 8), width=6)
+        ttk.Label(frame, text=label, font=(_FONT_FAMILY, 8)).pack(side=tk.LEFT)
+        val_label = ttk.Label(frame, text=str(var.get()), font=(_FONT_FAMILY, 8), width=6)
         val_label.pack(side=tk.RIGHT)
 
         slider = tk.Scale(
@@ -205,7 +233,7 @@ class OperationsPanel(ttk.LabelFrame):
     def _add_entry(parent, label: str, var: tk.StringVar) -> None:
         frame = ttk.Frame(parent)
         frame.pack(fill=tk.X, padx=6, pady=2)
-        ttk.Label(frame, text=label, font=("Segoe UI", 8)).pack(side=tk.LEFT)
+        ttk.Label(frame, text=label, font=(_FONT_FAMILY, 8)).pack(side=tk.LEFT)
         ttk.Entry(frame, textvariable=var, width=8).pack(side=tk.LEFT, padx=4)
 
     # ------------------------------------------------------------------

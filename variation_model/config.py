@@ -21,8 +21,8 @@ class Config:
     """統一管理 Variation Model 所有參數的組態類別。"""
 
     # ── 影像路徑 ──
-    train_image_dir: Path = Path(r"C:\path\to\good_images")
-    test_image_dir: Path = Path(r"C:\path\to\test_images")
+    train_image_dir: Path = field(default_factory=lambda: Path("data") / "train")
+    test_image_dir: Path = field(default_factory=lambda: Path("data") / "test")
     reference_image: Optional[Path] = None
 
     # ── 模型持久化 ──
@@ -48,6 +48,18 @@ class Config:
     # ── 多尺度 ──
     enable_multiscale: bool = True
     scale_levels: int = 3
+
+    def __post_init__(self):
+        if self.target_width <= 0:
+            raise ValueError(f"target_width must be positive, got {self.target_width}")
+        if self.target_height <= 0:
+            raise ValueError(f"target_height must be positive, got {self.target_height}")
+        if self.abs_threshold < 0:
+            raise ValueError(f"abs_threshold must be non-negative, got {self.abs_threshold}")
+        if self.var_threshold < 0:
+            raise ValueError(f"var_threshold must be non-negative, got {self.var_threshold}")
+        if self.morph_kernel_size < 0:
+            raise ValueError(f"morph_kernel_size must be non-negative, got {self.morph_kernel_size}")
 
     @classmethod
     def from_env(cls, env_path: Optional[str] = None) -> "Config":

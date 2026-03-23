@@ -28,6 +28,18 @@ from dl_anomaly.visualization.training_plots import plot_loss_curve
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 
 class TrainTab(ttk.Frame):
     """Training tab with controls, live loss plot, and log."""
@@ -159,7 +171,7 @@ class TrainTab(ttk.Frame):
         log_frame = ttk.LabelFrame(self, text="訓練日誌", padding=4)
         log_frame.pack(fill=tk.X, padx=6, pady=(3, 6))
 
-        self._log_text = tk.Text(log_frame, height=8, state=tk.DISABLED, wrap=tk.WORD, font=("Consolas", 9))
+        self._log_text = tk.Text(log_frame, height=8, state=tk.DISABLED, wrap=tk.WORD, font=(_MONO_FAMILY, 9))
         scrollbar = ttk.Scrollbar(log_frame, command=self._log_text.yview)
         self._log_text.configure(yscrollcommand=scrollbar.set)
         self._log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

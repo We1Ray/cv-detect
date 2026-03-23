@@ -24,6 +24,18 @@ from core.region_ops import region_to_display_image, select_shape
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # ---------------------------------------------------------------------------
 #  Theme constants
 # ---------------------------------------------------------------------------
@@ -341,7 +353,7 @@ class RegionFilterDialog(tk.Toplevel):
 
         self._min_val_label = tk.Label(
             row2, text="0", bg=_BG_DARK, fg=_FG_WHITE,
-            font=("Consolas", 10), width=12, anchor=tk.W,
+            font=(_MONO_FAMILY, 10), width=12, anchor=tk.W,
         )
         self._min_val_label.pack(side=tk.LEFT, padx=(0, 4))
 
@@ -372,7 +384,7 @@ class RegionFilterDialog(tk.Toplevel):
 
         self._max_val_label = tk.Label(
             row3, text="0", bg=_BG_DARK, fg=_FG_WHITE,
-            font=("Consolas", 10), width=12, anchor=tk.W,
+            font=(_MONO_FAMILY, 10), width=12, anchor=tk.W,
         )
         self._max_val_label.pack(side=tk.LEFT, padx=(0, 4))
 
@@ -421,7 +433,7 @@ class RegionFilterDialog(tk.Toplevel):
             fg=_FG_WHITE,
             selectbackground=_ACCENT,
             selectforeground="#ffffff",
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
             height=4,
             relief=tk.FLAT,
             highlightthickness=0,

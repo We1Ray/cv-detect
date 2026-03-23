@@ -41,6 +41,18 @@ from core.metrology import (
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # --------------------------------------------------------------------------- #
 # Theme constants
 # --------------------------------------------------------------------------- #
@@ -291,7 +303,7 @@ class MetrologyDialog(tk.Toplevel):
         ).pack(side=tk.LEFT, padx=(0, 4))
         tk.Label(
             res_row, textvariable=self._edge_count_var,
-            bg=_BG, fg="#88cc88", font=("Consolas", 10),
+            bg=_BG, fg="#88cc88", font=(_MONO_FAMILY, 10),
         ).pack(side=tk.LEFT)
 
         # Draw button
@@ -471,7 +483,7 @@ class MetrologyDialog(tk.Toplevel):
         ).pack(side=tk.LEFT, padx=(0, 4))
         tk.Label(
             calc_row, textvariable=self._meas_result_var,
-            bg=_BG, fg="#88cc88", font=("Consolas", 10),
+            bg=_BG, fg="#88cc88", font=(_MONO_FAMILY, 10),
         ).pack(side=tk.LEFT)
 
         # Show default sub-panel
@@ -678,7 +690,7 @@ class MetrologyDialog(tk.Toplevel):
         ).pack(side=tk.LEFT, padx=(0, 4))
         tk.Label(
             calc_row, textvariable=self._angle_result_var,
-            bg=_BG, fg="#88cc88", font=("Consolas", 10),
+            bg=_BG, fg="#88cc88", font=(_MONO_FAMILY, 10),
         ).pack(side=tk.LEFT)
 
         return panel
@@ -768,7 +780,7 @@ class MetrologyDialog(tk.Toplevel):
             fg=_FG_WHITE,
             insertbackground=_FG_WHITE,
             relief=tk.FLAT,
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
         )
         self._manual_text.pack(fill=tk.X)
 
@@ -802,7 +814,7 @@ class MetrologyDialog(tk.Toplevel):
             textvariable=self._fit_result_var,
             bg=_BG,
             fg="#88cc88",
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
             anchor=tk.W,
             justify=tk.LEFT,
         ).pack(fill=tk.X)

@@ -19,6 +19,18 @@ from dl_anomaly.config import Config
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class SettingsTab(ttk.Frame):
     """Settings panel with Apply / Reset / Save controls."""
@@ -119,7 +131,7 @@ class SettingsTab(ttk.Frame):
     def _section_header(parent: tk.Widget, text: str, row: int) -> int:
         ttk.Separator(parent, orient=tk.HORIZONTAL).grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 2))
         row += 1
-        ttk.Label(parent, text=text, font=("Segoe UI", 10, "bold")).grid(row=row, column=0, columnspan=2, sticky=tk.W)
+        ttk.Label(parent, text=text, font=(_FONT_FAMILY, 10, "bold")).grid(row=row, column=0, columnspan=2, sticky=tk.W)
         row += 1
         return row
 

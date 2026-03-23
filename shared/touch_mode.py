@@ -14,7 +14,19 @@ import threading
 import time
 import tkinter as tk
 from tkinter import ttk
+import platform as _platform
 from typing import Callable, Optional
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = "Consolas"
 
 
 # -- Dark theme colour constants (match project palette) -------------------
@@ -147,7 +159,7 @@ class TouchMode:
         v_pad = max(8, (min_button_height - btn_font_size - 8) // 2)
         style.configure(
             "TButton",
-            font=("Segoe UI", btn_font_size),
+            font=(_FONT_FAMILY, btn_font_size),
             padding=(12, v_pad),
             background=_COLOR_BUTTON_BG,
             foreground=_COLOR_FG,
@@ -161,7 +173,7 @@ class TouchMode:
         entry_font_size = int(11 * scale * (1.2 / 1.3))  # scale * ~1.2
         style.configure(
             "TEntry",
-            font=("Segoe UI", entry_font_size),
+            font=(_FONT_FAMILY, entry_font_size),
             padding=(8, 6),
             foreground=_COLOR_FG,
             fieldbackground=_COLOR_BUTTON_BG,
@@ -171,14 +183,14 @@ class TouchMode:
         style.configure(
             "Treeview",
             rowheight=36,
-            font=("Segoe UI", int(10 * scale)),
+            font=(_FONT_FAMILY, int(10 * scale)),
             background=_COLOR_BG,
             foreground=_COLOR_FG,
             fieldbackground=_COLOR_BG,
         )
         style.configure(
             "Treeview.Heading",
-            font=("Segoe UI", int(10 * scale), "bold"),
+            font=(_FONT_FAMILY, int(10 * scale), "bold"),
             padding=(4, 6),
         )
 
@@ -186,7 +198,7 @@ class TouchMode:
         combo_font_size = int(11 * scale * (1.2 / 1.3))
         style.configure(
             "TCombobox",
-            font=("Segoe UI", combo_font_size),
+            font=(_FONT_FAMILY, combo_font_size),
             padding=(8, 6),
             foreground=_COLOR_FG,
             fieldbackground=_COLOR_BUTTON_BG,
@@ -210,7 +222,7 @@ class TouchMode:
         spin_font_size = int(11 * scale * (1.2 / 1.3))
         style.configure(
             "TSpinbox",
-            font=("Segoe UI", spin_font_size),
+            font=(_FONT_FAMILY, spin_font_size),
             padding=(8, 6),
             foreground=_COLOR_FG,
             fieldbackground=_COLOR_BUTTON_BG,
@@ -290,15 +302,19 @@ class SwipeDetector:
         self._start_y: int = 0
         self._start_time: float = 0.0
 
-        widget.bind("<ButtonPress-1>", self._on_press, add=True)
-        widget.bind("<ButtonRelease-1>", self._on_release, add=True)
+        self._press_id: Optional[str] = widget.bind("<ButtonPress-1>", self._on_press, add=True)
+        self._release_id: Optional[str] = widget.bind("<ButtonRelease-1>", self._on_release, add=True)
 
     # ------------------------------------------------------------------ #
 
     def unbind(self) -> None:
-        """Remove all swipe-related event bindings from the widget."""
-        self.widget.unbind("<ButtonPress-1>")
-        self.widget.unbind("<ButtonRelease-1>")
+        """Remove only swipe-related event bindings from the widget."""
+        if self._press_id:
+            self.widget.unbind("<ButtonPress-1>", self._press_id)
+            self._press_id = None
+        if self._release_id:
+            self.widget.unbind("<ButtonRelease-1>", self._release_id)
+            self._release_id = None
 
     def _on_press(self, event: tk.Event) -> None:
         self._start_x = event.x
@@ -368,17 +384,23 @@ class LongPressDetector:
         self._start_y: int = 0
         self._press_event: Optional[tk.Event] = None
 
-        widget.bind("<ButtonPress-1>", self._on_press, add=True)
-        widget.bind("<ButtonRelease-1>", self._on_release, add=True)
-        widget.bind("<B1-Motion>", self._on_motion, add=True)
+        self._press_id: Optional[str] = widget.bind("<ButtonPress-1>", self._on_press, add=True)
+        self._release_id: Optional[str] = widget.bind("<ButtonRelease-1>", self._on_release, add=True)
+        self._motion_id: Optional[str] = widget.bind("<B1-Motion>", self._on_motion, add=True)
 
     # ------------------------------------------------------------------ #
 
     def unbind(self) -> None:
-        """Remove all long-press event bindings and cancel any pending timer."""
-        self.widget.unbind("<ButtonPress-1>")
-        self.widget.unbind("<ButtonRelease-1>")
-        self.widget.unbind("<B1-Motion>")
+        """Remove only long-press event bindings and cancel any pending timer."""
+        if self._press_id:
+            self.widget.unbind("<ButtonPress-1>", self._press_id)
+            self._press_id = None
+        if self._release_id:
+            self.widget.unbind("<ButtonRelease-1>", self._release_id)
+            self._release_id = None
+        if self._motion_id:
+            self.widget.unbind("<B1-Motion>", self._motion_id)
+            self._motion_id = None
         self._cancel()
 
     def _on_press(self, event: tk.Event) -> None:

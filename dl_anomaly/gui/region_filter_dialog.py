@@ -24,6 +24,18 @@ from dl_anomaly.core.region_ops import region_to_display_image, select_shape
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # ---------------------------------------------------------------------------
 #  Theme constants
 # ---------------------------------------------------------------------------
@@ -342,7 +354,7 @@ class RegionFilterDialog(tk.Toplevel):
         self._min_val_var = tk.StringVar(value="0")
         self._min_val_entry = tk.Entry(
             row2, textvariable=self._min_val_var, bg=_BG_MEDIUM, fg=_FG_WHITE,
-            insertbackground=_FG_WHITE, font=("Consolas", 10), width=12,
+            insertbackground=_FG_WHITE, font=(_MONO_FAMILY, 10), width=12,
             relief=tk.FLAT, highlightthickness=1, highlightcolor=_ACCENT,
             highlightbackground=_BG_MEDIUM,
         )
@@ -378,7 +390,7 @@ class RegionFilterDialog(tk.Toplevel):
         self._max_val_var = tk.StringVar(value="0")
         self._max_val_entry = tk.Entry(
             row3, textvariable=self._max_val_var, bg=_BG_MEDIUM, fg=_FG_WHITE,
-            insertbackground=_FG_WHITE, font=("Consolas", 10), width=12,
+            insertbackground=_FG_WHITE, font=(_MONO_FAMILY, 10), width=12,
             relief=tk.FLAT, highlightthickness=1, highlightcolor=_ACCENT,
             highlightbackground=_BG_MEDIUM,
         )
@@ -431,7 +443,7 @@ class RegionFilterDialog(tk.Toplevel):
             fg=_FG_WHITE,
             selectbackground=_ACCENT,
             selectforeground="#ffffff",
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
             height=4,
             relief=tk.FLAT,
             highlightthickness=0,

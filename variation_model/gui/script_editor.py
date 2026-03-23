@@ -17,6 +17,7 @@ import ast
 import logging
 import math
 import operator
+import platform
 import re
 import time
 import traceback
@@ -40,6 +41,9 @@ _BG_MEDIUM = "#3c3c3c"
 _FG_LIGHT = "#cccccc"
 _ACCENT = "#0078d4"
 _CANVAS_BG = "#1e1e1e"
+
+# Platform-aware monospace font
+_MONO_FONT = "Menlo" if platform.system() == "Darwin" else "Consolas"
 
 
 # ====================================================================== #
@@ -522,6 +526,12 @@ class ScriptInterpreter:
         elif isinstance(node, ast.Attribute):
             obj = self._eval_expr(node.value)
             attr_name = node.attr
+            # Block dunder attribute access for security
+            if attr_name.startswith("__"):
+                raise ScriptError(
+                    f"Access to private/protected attribute '{attr_name}' is not allowed.",
+                    line=getattr(node, "lineno", 0),
+                )
             try:
                 return getattr(obj, attr_name)
             except AttributeError:
@@ -1353,7 +1363,7 @@ class ScriptEditor(ttk.Frame):
             "bg": _BG_MEDIUM, "fg": "#e0e0e0",
             "activebackground": _ACCENT, "activeforeground": "#ffffff",
             "bd": 0, "padx": 8, "pady": 3,
-            "font": ("Consolas", 9),
+            "font": (_MONO_FONT, 9),
         }
 
         self._btn_run = tk.Button(
@@ -1406,7 +1416,7 @@ class ScriptEditor(ttk.Frame):
             insertbackground="#ffffff",
             selectbackground="#264f78",
             selectforeground="#ffffff",
-            font=("Consolas", 11),
+            font=(_MONO_FONT, 11),
             undo=True,
             tabs="    ",
             bd=0,
@@ -1449,7 +1459,7 @@ class ScriptEditor(ttk.Frame):
             state=tk.DISABLED,
             bg=_CANVAS_BG,
             fg=_FG_LIGHT,
-            font=("Consolas", 11),
+            font=(_MONO_FONT, 11),
             bd=0,
             padx=4,
             pady=4,
@@ -1520,7 +1530,7 @@ class ScriptEditor(ttk.Frame):
                 anchor="ne",
                 text=str(line_num),
                 fill="#888888",
-                font=("Consolas", 11),
+                font=(_MONO_FONT, 11),
             )
             idx = self._code_text.index(f"{idx}+1line")
             if self._code_text.compare(idx, ">=", tk.END):

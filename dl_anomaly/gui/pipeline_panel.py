@@ -21,6 +21,18 @@ from PIL import Image, ImageTk
 
 from dl_anomaly.gui.platform_keys import display
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class PipelineStep:
     """Data class for a single pipeline step."""
@@ -120,7 +132,7 @@ class PipelinePanel(ttk.Frame):
         ttk.Label(
             title_frame,
             text="\u8655\u7406\u6d41\u7a0b",  # "Processing Pipeline"
-            font=("Segoe UI", 10, "bold"),
+            font=(_FONT_FAMILY, 10, "bold"),
         ).pack(side=tk.LEFT, padx=4)
 
         self._clear_btn = ttk.Button(
@@ -141,7 +153,7 @@ class PipelinePanel(ttk.Frame):
                 filter_frame,
                 text=label,
                 width=5,
-                font=("Segoe UI", 8),
+                font=(_FONT_FAMILY, 8),
                 bg="#3c3c3c",
                 fg="#e0e0e0",
                 activebackground="#4a4a6c",
@@ -181,7 +193,7 @@ class PipelinePanel(ttk.Frame):
         self._list_canvas.bind("<MouseWheel>", self._on_mousewheel)
 
         # Thumbnail grid at the bottom
-        thumb_label = ttk.Label(self, text="\u7e2e\u5716\u9810\u89bd", font=("Segoe UI", 9))
+        thumb_label = ttk.Label(self, text="\u7e2e\u5716\u9810\u89bd", font=(_FONT_FAMILY, 9))
         thumb_label.pack(fill=tk.X, padx=6, pady=(4, 0))
         self._thumb_frame = ttk.Frame(self)
         self._thumb_frame.pack(fill=tk.X, padx=2, pady=2)
@@ -273,7 +285,7 @@ class PipelinePanel(ttk.Frame):
             text=f"\u958b\u555f\u5716\u7247\u4ee5\u958b\u59cb\n{display('O')}",
             bg="#2b2b2b",
             fg="#555555",
-            font=("Segoe UI", 10),
+            font=(_FONT_FAMILY, 10),
             justify=tk.CENTER,
             pady=40,
         )
@@ -346,7 +358,7 @@ class PipelinePanel(ttk.Frame):
             text="",
             fg="#4fc3f7",
             bg=self._BG,
-            font=("Segoe UI", 10),
+            font=(_FONT_FAMILY, 10),
             width=2,
         )
         indicator.pack(side=tk.LEFT)
@@ -361,7 +373,7 @@ class PipelinePanel(ttk.Frame):
             text=tag_text,
             bg=tag_bg,
             fg=self._TAG_FG,
-            font=("Segoe UI", 7, "bold"),
+            font=(_FONT_FAMILY, 7, "bold"),
             width=2,
             anchor=tk.CENTER,
             padx=1,
@@ -376,7 +388,7 @@ class PipelinePanel(ttk.Frame):
             text=text,
             fg="#e0e0e0",
             bg=self._BG,
-            font=("Segoe UI", 9),
+            font=(_FONT_FAMILY, 9),
             anchor=tk.W,
         )
         label.pack(side=tk.LEFT, fill=tk.X, expand=True)

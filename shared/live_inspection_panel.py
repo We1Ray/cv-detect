@@ -18,7 +18,20 @@ from pathlib import Path
 from tkinter import filedialog, ttk
 from typing import Callable, Optional
 
+import platform as _platform
+
 from shared.i18n import t
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +144,7 @@ class LiveInspectionPanel(tk.LabelFrame):
         self._path_entry = tk.Entry(
             path_frame, textvariable=self._path_var,
             bg=_BG_DARK, fg=_FG, insertbackground=_FG,
-            font=("Consolas", 10), relief=tk.FLAT,
+            font=(_MONO_FAMILY, 10), relief=tk.FLAT,
         )
         self._path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
 
@@ -159,7 +172,7 @@ class LiveInspectionPanel(tk.LabelFrame):
             textvariable=self._interval_var,
             width=7,
             bg=_BG_DARK, fg=_FG, buttonbackground=_BG_DARK,
-            insertbackground=_FG, font=("Consolas", 10),
+            insertbackground=_FG, font=(_MONO_FAMILY, 10),
             relief=tk.FLAT,
         )
         self._interval_spin.pack(side=tk.LEFT, padx=(8, 0))
@@ -230,7 +243,7 @@ class LiveInspectionPanel(tk.LabelFrame):
         self._count_label = tk.Label(
             count_frame,
             text=self._format_counts(0, 0, 0),
-            bg=_BG_DARK, fg=_FG, font=("Consolas", 11),
+            bg=_BG_DARK, fg=_FG, font=(_MONO_FAMILY, 11),
         )
         self._count_label.pack(anchor=tk.W)
 
@@ -248,7 +261,7 @@ class LiveInspectionPanel(tk.LabelFrame):
             log_frame,
             height=8, width=50,
             bg=_BG_DARK, fg=_FG, insertbackground=_FG,
-            font=("Consolas", 9), wrap=tk.WORD,
+            font=(_MONO_FAMILY, 9), wrap=tk.WORD,
             relief=tk.FLAT, state=tk.DISABLED,
         )
         log_scroll = tk.Scrollbar(

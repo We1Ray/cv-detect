@@ -24,6 +24,18 @@ from PIL import Image, ImageTk
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = _MONO_FAMILY
+
 
 # ======================================================================
 # Training Dialog
@@ -100,9 +112,9 @@ class TrainingDialog(tk.Toplevel):
         info_frame = ttk.Frame(ctrl_frame)
         info_frame.pack(side=tk.RIGHT)
         self._lr_var = tk.StringVar(value="LR: --")
-        ttk.Label(info_frame, textvariable=self._lr_var, font=("Segoe UI", 8)).pack(side=tk.LEFT, padx=6)
+        ttk.Label(info_frame, textvariable=self._lr_var, font=(_FONT_FAMILY, 8)).pack(side=tk.LEFT, padx=6)
         self._best_var = tk.StringVar(value="Best Val: --")
-        ttk.Label(info_frame, textvariable=self._best_var, font=("Segoe UI", 8)).pack(side=tk.LEFT, padx=6)
+        ttk.Label(info_frame, textvariable=self._best_var, font=(_FONT_FAMILY, 8)).pack(side=tk.LEFT, padx=6)
 
         # --- Middle: loss plot + sample grid ---
         mid_frame = ttk.Frame(self)
@@ -140,7 +152,7 @@ class TrainingDialog(tk.Toplevel):
         log_frame = ttk.LabelFrame(self, text="\u8a13\u7df4\u65e5\u8a8c", padding=4)
         log_frame.pack(fill=tk.X, padx=8, pady=(4, 8))
 
-        self._log_text = tk.Text(log_frame, height=6, state=tk.DISABLED, wrap=tk.WORD, font=("Consolas", 9))
+        self._log_text = tk.Text(log_frame, height=6, state=tk.DISABLED, wrap=tk.WORD, font=(_MONO_FAMILY, 9))
         scrollbar = ttk.Scrollbar(log_frame, command=self._log_text.yview)
         self._log_text.configure(yscrollcommand=scrollbar.set)
         self._log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -369,7 +381,7 @@ class BatchInspectDialog(tk.Toplevel):
 
         # Summary
         self._summary_var = tk.StringVar(value="")
-        ttk.Label(self, textvariable=self._summary_var, font=("Segoe UI", 9, "bold")).pack(
+        ttk.Label(self, textvariable=self._summary_var, font=(_FONT_FAMILY, 9, "bold")).pack(
             fill=tk.X, padx=8, pady=(4, 8)
         )
 
@@ -476,7 +488,7 @@ class ModelInfoDialog(tk.Toplevel):
         self.transient(master)
         self.grab_set()
 
-        text = tk.Text(self, font=("Consolas", 10), wrap=tk.WORD, padx=10, pady=10)
+        text = tk.Text(self, font=(_MONO_FAMILY, 10), wrap=tk.WORD, padx=10, pady=10)
         text.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
         # Architecture
@@ -730,7 +742,7 @@ class SettingsDialog(tk.Toplevel):
     def _section(self, parent: tk.Widget, text: str, row: int) -> int:
         ttk.Separator(parent, orient=tk.HORIZONTAL).grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 2))
         row += 1
-        ttk.Label(parent, text=text, font=("Segoe UI", 10, "bold")).grid(row=row, column=0, columnspan=2, sticky=tk.W)
+        ttk.Label(parent, text=text, font=(_FONT_FAMILY, 10, "bold")).grid(row=row, column=0, columnspan=2, sticky=tk.W)
         row += 1
         return row
 

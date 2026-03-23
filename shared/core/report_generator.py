@@ -54,7 +54,7 @@ _CLR_TEXT = '#333333'
 _CLR_TEXT_LIGHT = '#666666'
 _CLR_TEXT_MUTED = '#999999'
 
-_SOFTWARE_VERSION = 'TastyByte CV-Detect v1.0'
+_SOFTWARE_VERSION = 'TastyByte CV-Detect v2.0.0'
 
 
 # ---------------------------------------------------------------------------

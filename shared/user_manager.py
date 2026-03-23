@@ -11,10 +11,13 @@ Uses SQLite for persistence with pbkdf2 password hashing.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import logging
 import os
 import re
+import secrets
 import sqlite3
+import string
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -66,6 +69,16 @@ def _hash_password(password: str, salt: Optional[bytes] = None) -> str:
     return f"{salt.hex()}:{dk.hex()}"
 
 
+def _generate_secure_password() -> str:
+    """Generate a random 16-char password meeting the policy."""
+    alphabet = string.ascii_letters + string.digits + "!@#$%"
+    while True:
+        pw = ''.join(secrets.choice(alphabet) for _ in range(16))
+        if (any(c.isupper() for c in pw) and any(c.isdigit() for c in pw)
+                and any(c in "!@#$%" for c in pw)):
+            return pw
+
+
 def _verify_password(password: str, stored: str) -> bool:
     """Verify *password* against a ``salt_hex:hash_hex`` string."""
     try:
@@ -73,7 +86,7 @@ def _verify_password(password: str, stored: str) -> bool:
         salt = bytes.fromhex(salt_hex)
     except (ValueError, AttributeError):
         return False
-    return _hash_password(password, salt) == stored
+    return hmac.compare_digest(_hash_password(password, salt), stored)
 
 
 # ---------------------------------------------------------------------------
@@ -127,14 +140,18 @@ class UserManager:
                 row = conn.execute("SELECT COUNT(*) FROM users").fetchone()
                 if row[0] == 0:
                     now = datetime.now(timezone.utc).isoformat()
-                    pw_hash = _hash_password("admin123")
+                    default_pw = _generate_secure_password()
+                    pw_hash = _hash_password(default_pw)
                     conn.execute(
                         "INSERT INTO users (username, role, password_hash, created_at, force_password_change) "
                         "VALUES (?, ?, ?, ?, 1)",
                         ("admin", UserRole.ADMIN, pw_hash, now),
                     )
                     conn.commit()
-                    logger.info("Default admin user created.")
+                    logger.warning(
+                        "Default admin created. Initial password: %s — CHANGE IMMEDIATELY.",
+                        default_pw,
+                    )
             finally:
                 conn.close()
 
@@ -175,6 +192,8 @@ class UserManager:
             return False, "Password must contain at least 1 uppercase letter."
         if not re.search(r"[0-9]", password):
             return False, "Password must contain at least 1 digit."
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            return False, "Password must contain at least 1 special character."
         return True, ""
 
     def create_user(self, username: str, password: str, role: UserRole = UserRole.OPERATOR) -> int:
@@ -219,9 +238,13 @@ class UserManager:
                     (username,),
                 ).fetchone()
                 if row is None:
+                    # Prevent timing oracle on username existence
+                    _hash_password("dummy_password_to_prevent_timing_oracle")
+                    logger.warning("Failed login attempt for unknown user '%s'.", username)
                     return None
                 record = self._row_to_record(row)
                 if not _verify_password(password, record.password_hash):
+                    logger.warning("Failed login attempt for user '%s'.", username)
                     return None
                 # Update last_login
                 now = datetime.now(timezone.utc).isoformat()

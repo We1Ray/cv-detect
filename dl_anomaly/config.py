@@ -96,10 +96,22 @@ class Config:
     in_channels: int = field(init=False)
 
     def __post_init__(self) -> None:
+        self._validate()
         self.in_channels = 1 if self.grayscale else 3
         # Guarantee output dirs exist
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.results_dir.mkdir(parents=True, exist_ok=True)
+
+    def _validate(self) -> None:
+        """Validate configuration values."""
+        if self.image_size <= 0:
+            raise ValueError(f"IMAGE_SIZE must be positive, got {self.image_size}")
+        if self.batch_size <= 0:
+            raise ValueError(f"BATCH_SIZE must be positive, got {self.batch_size}")
+        if self.learning_rate <= 0:
+            raise ValueError(f"LEARNING_RATE must be positive, got {self.learning_rate}")
+        if self.num_epochs <= 0:
+            raise ValueError(f"NUM_EPOCHS must be positive, got {self.num_epochs}")
 
     # ------------------------------------------------------------------
     # Convenience helpers

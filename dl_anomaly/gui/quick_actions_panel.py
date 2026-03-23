@@ -10,6 +10,19 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Dict, Optional
 
+import platform as _platform
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class QuickActionsPanel(ttk.Frame):
     """Grouped quick-action buttons for industrial inspection workflows."""
@@ -35,9 +48,24 @@ class QuickActionsPanel(ttk.Frame):
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        import platform as _platform
+
         def _on_wheel(event):
-            canvas.yview_scroll(-1 * (event.delta // 120), "units")
-        canvas.bind_all("<MouseWheel>", _on_wheel, add="+")
+            if _platform.system() == "Darwin":
+                canvas.yview_scroll(-event.delta, "units")
+            else:
+                canvas.yview_scroll(-event.delta // 120, "units")
+
+        def _bind_scroll(event=None):
+            canvas.bind_all("<MouseWheel>", _on_wheel)
+
+        def _unbind_scroll(event=None):
+            canvas.unbind_all("<MouseWheel>")
+
+        canvas.bind("<Enter>", _bind_scroll)
+        canvas.bind("<Leave>", _unbind_scroll)
+        inner.bind("<Enter>", _bind_scroll)
+        inner.bind("<Leave>", _unbind_scroll)
 
         # ── DL Workflow ──
         self._add_group(inner, "DL \u6aa2\u6e2c\u5de5\u4f5c\u6d41", [
@@ -87,7 +115,7 @@ class QuickActionsPanel(ttk.Frame):
         # Group header
         header = tk.Label(
             parent, text=title, bg="#2b2b2b", fg="#0078d4",
-            font=("Segoe UI", 9, "bold"), anchor=tk.W,
+            font=(_FONT_FAMILY, 9, "bold"), anchor=tk.W,
         )
         header.pack(fill=tk.X, padx=8, pady=(8, 2))
 
@@ -104,7 +132,7 @@ class QuickActionsPanel(ttk.Frame):
                 fg="#e0e0e0",
                 activebackground="#5c6bc0",
                 activeforeground="#ffffff",
-                font=("Segoe UI", 9),
+                font=(_FONT_FAMILY, 9),
                 relief=tk.FLAT,
                 anchor=tk.W,
                 padx=12,

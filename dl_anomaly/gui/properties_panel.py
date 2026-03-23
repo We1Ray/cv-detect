@@ -16,6 +16,18 @@ from typing import Callable, Optional
 import numpy as np
 from PIL import Image, ImageDraw, ImageTk
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class PropertiesPanel(ttk.LabelFrame):
     """Displays properties of the currently selected pipeline step image."""
@@ -44,18 +56,18 @@ class PropertiesPanel(ttk.LabelFrame):
         ]
 
         for i, (key, label_text) in enumerate(fields):
-            ttk.Label(self, text=label_text, font=("Segoe UI", 8)).grid(
+            ttk.Label(self, text=label_text, font=(_FONT_FAMILY, 8)).grid(
                 row=i, column=0, sticky=tk.W, padx=(6, 2), pady=1,
             )
             var = tk.StringVar(value="--")
             self._vars[key] = var
-            ttk.Label(self, textvariable=var, font=("Segoe UI", 8)).grid(
+            ttk.Label(self, textvariable=var, font=(_FONT_FAMILY, 8)).grid(
                 row=i, column=1, sticky=tk.W, padx=2, pady=1,
             )
 
         # Mini histogram
         row = len(fields)
-        ttk.Label(self, text="\u76f4\u65b9\u5716:", font=("Segoe UI", 8)).grid(
+        ttk.Label(self, text="\u76f4\u65b9\u5716:", font=(_FONT_FAMILY, 8)).grid(
             row=row, column=0, sticky=tk.NW, padx=(6, 2), pady=(4, 1),
         )
         self._hist_label = ttk.Label(self)
@@ -64,7 +76,7 @@ class PropertiesPanel(ttk.LabelFrame):
         # Region feature table (initially hidden)
         row += 1
         self._region_table_label = ttk.Label(
-            self, text="\u5340\u57df\u8a73\u60c5:", font=("Segoe UI", 8, "bold"),
+            self, text="\u5340\u57df\u8a73\u60c5:", font=(_FONT_FAMILY, 8, "bold"),
         )
         self._region_table_label.grid(
             row=row, column=0, columnspan=2, padx=6, pady=(6, 1), sticky=tk.W,

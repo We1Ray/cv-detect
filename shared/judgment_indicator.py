@@ -15,7 +15,20 @@ import tkinter as tk
 from datetime import datetime
 from typing import Any, Dict
 
+import platform as _platform
+
 from shared.i18n import t
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
 
 
 # -- Colour constants --------------------------------------------------------
@@ -95,7 +108,7 @@ class JudgmentIndicator(tk.Frame):
         self._score_label = tk.Label(
             self._score_frame,
             text=f"{t('judgment.score')}: --",
-            font=("Consolas", 12),
+            font=(_MONO_FAMILY, 12),
             fg=_COLOR_STATS_FG,
             bg=_COLOR_STATS_BG,
             padx=8,
@@ -122,7 +135,7 @@ class JudgmentIndicator(tk.Frame):
         self._stats_label = tk.Label(
             self._stats_frame,
             text=f"{t('judgment.total')}: 0 | {t('judgment.pass_count')}: 0 | {t('judgment.fail_count')}: 0 | {t('judgment.yield_rate')}: --",
-            font=("Consolas", 11),
+            font=(_MONO_FAMILY, 11),
             fg=_COLOR_STATS_FG,
             bg=_COLOR_STATS_BG,
             padx=8,
@@ -133,7 +146,7 @@ class JudgmentIndicator(tk.Frame):
         self._timestamp_label = tk.Label(
             self._stats_frame,
             text=f"{t('judgment.last_time')}: --",
-            font=("Consolas", 11),
+            font=(_MONO_FAMILY, 11),
             fg="#888888",
             bg=_COLOR_STATS_BG,
             padx=8,

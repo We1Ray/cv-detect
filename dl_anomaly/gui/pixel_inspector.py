@@ -11,7 +11,17 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Optional
 
+import platform as _platform
 import numpy as np
+
+# Platform-aware monospace font
+_SYSTEM = _platform.system()
+if _SYSTEM == "Darwin":
+    _MONO_FAMILY = "Menlo"
+elif _SYSTEM == "Linux":
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _MONO_FAMILY = "Consolas"
 
 
 class PixelInspector(tk.Toplevel):
@@ -43,6 +53,10 @@ class PixelInspector(tk.Toplevel):
         # Current grid half-size (radius). Full size = 2*radius + 1.
         self._grid_size: int = 7
 
+        # Cached image min/max for non-uint8 normalisation (avoid per-call recomputation)
+        self._img_min: Optional[float] = None
+        self._img_max: Optional[float] = None
+
         # Cell label widgets (row, col) -> tk.Label
         self._cells: dict[tuple[int, int], tk.Label] = {}
 
@@ -66,7 +80,7 @@ class PixelInspector(tk.Toplevel):
             text="X: --  Y: --",
             bg=self._BG,
             fg=self._FG,
-            font=("Consolas", 10),
+            font=(_MONO_FAMILY, 10),
             anchor=tk.W,
         )
         self._coord_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -76,7 +90,7 @@ class PixelInspector(tk.Toplevel):
             text="Grid:",
             bg=self._BG,
             fg=self._FG,
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
         ).pack(side=tk.LEFT, padx=(8, 2))
 
         self._size_var = tk.StringVar(value=str(self._grid_size))
@@ -136,7 +150,7 @@ class PixelInspector(tk.Toplevel):
                     text="--",
                     bg="#1a1a1a",
                     fg=self._FG,
-                    font=("Consolas", 8),
+                    font=(_MONO_FAMILY, 8),
                     anchor=tk.CENTER,
                 )
                 cell.grid(row=0, column=0, sticky="nsew")
@@ -155,6 +169,14 @@ class PixelInspector(tk.Toplevel):
     # ------------------------------------------------------------------ #
     #  Public API                                                          #
     # ------------------------------------------------------------------ #
+
+    def set_image(self, image: np.ndarray) -> None:
+        """Cache image statistics for normalisation.
+
+        Call this whenever the inspected image changes (not on every mouse move).
+        """
+        self._img_min = float(image.min())
+        self._img_max = float(image.max())
 
     def update_values(self, image: np.ndarray, cx: int, cy: int) -> None:
         """Update the inspector grid with pixel values around (*cx*, *cy*).
@@ -199,9 +221,9 @@ class PixelInspector(tk.Toplevel):
                         if image.dtype == np.uint8:
                             val = int(pixel)
                         else:
-                            # Normalise to 0-255 for display
-                            img_min = image.min()
-                            img_max = image.max()
+                            # Normalise to 0-255 for display (use cached min/max)
+                            img_min = self._img_min if self._img_min is not None else float(image.min())
+                            img_max = self._img_max if self._img_max is not None else float(image.max())
                             if img_max - img_min > 0:
                                 val = int(
                                     (float(pixel) - img_min)

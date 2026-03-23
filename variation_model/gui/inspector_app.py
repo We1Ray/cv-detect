@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os as _os
+import platform
 import sys as _sys
 import threading
 import tkinter as tk
@@ -48,6 +49,9 @@ logger = logging.getLogger(__name__)
 # 最近開啟的檔案上限
 MAX_RECENT_FILES = 10
 
+# Platform-aware accelerator modifier for menu labels
+_ACCEL_MOD = "Cmd" if platform.system() == "Darwin" else "Ctrl"
+
 
 class InspectorApp(tk.Tk):
     """Industrial Vision 風格的 Variation Model Inspector 主應用程式。"""
@@ -72,6 +76,7 @@ class InspectorApp(tk.Tk):
         self._current_region = None  # 目前的 Region 物件
 
         # ── 持久化狀態 ──
+        self._closing = False
         self._app_state = AppState("variation_model")
 
         # ── 視窗設定 ──
@@ -186,10 +191,10 @@ class InspectorApp(tk.Tk):
         # ── 檔案 ──
         file_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                            activebackground="#0078d4", activeforeground="#ffffff")
-        file_menu.add_command(label="開啟影像...", command=self._open_image, accelerator="Ctrl+O")
+        file_menu.add_command(label="開啟影像...", command=self._open_image, accelerator=f"{_ACCEL_MOD}+O")
         file_menu.add_command(label="開啟目錄...", command=self._open_directory)
         file_menu.add_separator()
-        file_menu.add_command(label="儲存目前影像...", command=self._save_current_image, accelerator="Ctrl+S")
+        file_menu.add_command(label="儲存目前影像...", command=self._save_current_image, accelerator=f"{_ACCEL_MOD}+S")
         file_menu.add_command(label="儲存所有結果...", command=self._save_all_results)
         file_menu.add_separator()
 
@@ -242,9 +247,9 @@ class InspectorApp(tk.Tk):
         # ── 區域 ──
         region_menu = tk.Menu(menubar, tearoff=0, bg="#3c3c3c", fg="#cccccc",
                               activebackground="#0078d4", activeforeground="#ffffff")
-        region_menu.add_command(label="像素值檢查器...", command=self._toggle_pixel_inspector, accelerator="Ctrl+I")
+        region_menu.add_command(label="像素值檢查器...", command=self._toggle_pixel_inspector, accelerator=f"{_ACCEL_MOD}+I")
         region_menu.add_separator()
-        region_menu.add_command(label="閾值分割...", command=self._open_threshold_dialog, accelerator="Ctrl+T")
+        region_menu.add_command(label="閾值分割...", command=self._open_threshold_dialog, accelerator=f"{_ACCEL_MOD}+T")
         region_menu.add_command(label="自動閾值 (Otsu)", command=self._auto_threshold_otsu)
         region_menu.add_command(label="自動閾值 (自適應)", command=self._auto_threshold_adaptive)
         region_menu.add_separator()
@@ -630,28 +635,44 @@ class InspectorApp(tk.Tk):
     #  鍵盤快捷鍵                                                          #
     # ================================================================== #
 
+    def _should_handle_key(self, event=None) -> bool:
+        """Return False if focus is on a text-input widget."""
+        w = self.focus_get()
+        if w is None:
+            return True
+        widget_class = w.winfo_class()
+        return widget_class not in ("Entry", "Text", "TCombobox", "Spinbox", "TEntry", "TSpinbox")
+
     def _bind_shortcuts(self) -> None:
         """綁定鍵盤快捷鍵。"""
-        self.bind_all("<Control-o>", lambda e: self._open_image())
-        self.bind_all("<Control-O>", lambda e: self._open_image())
-        self.bind_all("<Control-s>", lambda e: self._save_current_image())
-        self.bind_all("<Control-S>", lambda e: self._save_current_image())
-        self.bind_all("<Control-z>", lambda e: self._undo())
-        self.bind_all("<Control-Z>", lambda e: self._undo())
-        self.bind_all("<Control-y>", lambda e: self._redo())
-        self.bind_all("<Control-Y>", lambda e: self._redo())
-        self.bind_all("<space>", lambda e: self._fit_window())
-        self.bind_all("<plus>", lambda e: self._zoom_in())
-        self.bind_all("<minus>", lambda e: self._zoom_out())
-        self.bind_all("<equal>", lambda e: self._zoom_in())  # 鍵盤 + 通常是 =
+        import platform as _platform
+        _MOD = "Command" if _platform.system() == "Darwin" else "Control"
+
+        # --- Mod+key shortcuts (Cmd on macOS, Ctrl on Win/Linux) ---
+        self.bind_all(f"<{_MOD}-o>", lambda e: self._open_image())
+        self.bind_all(f"<{_MOD}-O>", lambda e: self._open_image())
+        self.bind_all(f"<{_MOD}-s>", lambda e: self._save_current_image())
+        self.bind_all(f"<{_MOD}-S>", lambda e: self._save_current_image())
+        self.bind_all(f"<{_MOD}-z>", lambda e: self._undo())
+        self.bind_all(f"<{_MOD}-Z>", lambda e: self._undo())
+        self.bind_all(f"<{_MOD}-y>", lambda e: self._redo())
+        self.bind_all(f"<{_MOD}-Y>", lambda e: self._redo())
+        self.bind_all(f"<{_MOD}-i>", lambda e: self._toggle_pixel_inspector())
+        self.bind_all(f"<{_MOD}-I>", lambda e: self._toggle_pixel_inspector())
+        self.bind_all(f"<{_MOD}-t>", lambda e: self._open_threshold_dialog())
+        self.bind_all(f"<{_MOD}-T>", lambda e: self._open_threshold_dialog())
+
+        # --- Plain keys (guarded: skip when focus is on text input) ---
+        self.bind_all("<space>", lambda e: self._fit_window() if self._should_handle_key(e) else None)
+        self.bind_all("<plus>", lambda e: self._zoom_in() if self._should_handle_key(e) else None)
+        self.bind_all("<minus>", lambda e: self._zoom_out() if self._should_handle_key(e) else None)
+        self.bind_all("<equal>", lambda e: self._zoom_in() if self._should_handle_key(e) else None)
+        self.bind_all("<Delete>", lambda e: self._delete_current_step() if self._should_handle_key(e) else None)
+
+        # --- Function keys (safe, no conflict with text input) ---
         self.bind_all("<F5>", lambda e: self._inspect_single())
         self.bind_all("<F8>", lambda e: self._toggle_script_editor())
         self.bind_all("<F9>", lambda e: self._run_script())
-        self.bind_all("<Control-i>", lambda e: self._toggle_pixel_inspector())
-        self.bind_all("<Control-I>", lambda e: self._toggle_pixel_inspector())
-        self.bind_all("<Control-t>", lambda e: self._open_threshold_dialog())
-        self.bind_all("<Control-T>", lambda e: self._open_threshold_dialog())
-        self.bind_all("<Delete>", lambda e: self._delete_current_step())
         self.bind_all("<F1>", lambda e: self._show_shortcuts_dialog())
         self.bind_all("<Escape>", lambda e: self._cancel_current_tool())
 
@@ -2002,6 +2023,8 @@ class InspectorApp(tk.Tk):
                 result = func()
 
                 def _finish(r=result):
+                    if self._closing:
+                        return
                     self._progress.stop()
                     if on_done is not None:
                         on_done(r)
@@ -2009,6 +2032,8 @@ class InspectorApp(tk.Tk):
                 self.after(0, _finish)
             except Exception as exc:
                 def _fail(e=exc):
+                    if self._closing:
+                        return
                     self._progress.stop()
                     if on_error is not None:
                         on_error(e)
@@ -2158,6 +2183,7 @@ class InspectorApp(tk.Tk):
 
     def _on_close(self) -> None:
         """關閉應用程式。"""
+        self._closing = True
         if self._live_panel.is_running:
             self._live_panel.stop_inspection()
         self._app_state.save_geometry(self)

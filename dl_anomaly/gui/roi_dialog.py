@@ -19,6 +19,18 @@ from dl_anomaly.core.roi_manager import ROI, ROIManager, draw_rois
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # ---------------------------------------------------------------------------
 #  Theme constants
 # ---------------------------------------------------------------------------
@@ -369,7 +381,7 @@ class ROIManagerDialog(tk.Toplevel):
             self._polygon_text = tk.Text(
                 self._param_frame, height=3, width=30,
                 bg=_BG_ENTRY, fg=_FG, insertbackground=_FG,
-                relief=tk.FLAT, font=("Consolas", 9),
+                relief=tk.FLAT, font=(_MONO_FAMILY, 9),
             )
             self._polygon_text.pack(fill=tk.X, pady=2)
             return

@@ -15,7 +15,20 @@ import tkinter as tk
 from collections import deque
 from typing import TYPE_CHECKING, Deque, Optional
 
+import platform as _platform
+
 from shared.i18n import t
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = "Consolas"
 
 if TYPE_CHECKING:
     from shared.core.results_db import ResultsDatabase, SPCMetrics
@@ -82,7 +95,7 @@ class DashboardPanel(tk.LabelFrame):
     ) -> None:
         super().__init__(
             master,
-            text=" SPC Dashboard ",
+            text=t("dashboard.spc_title"),
             bg=_BG,
             fg=_FG,
             font=("Helvetica", 11, "bold"),
@@ -99,6 +112,7 @@ class DashboardPanel(tk.LabelFrame):
         self._fail_count: int = 0
         self._recent_results: Deque[bool] = deque(maxlen=trend_window)
         self._yield_history: Deque[float] = deque(maxlen=trend_window)
+        self._resize_after_id: Optional[str] = None
 
         # -- Build layout (top -> bottom) ------------------------------------
         self._build_yield_section()
@@ -164,7 +178,7 @@ class DashboardPanel(tk.LabelFrame):
             lbl = tk.Label(
                 frame,
                 text="0",
-                font=("Consolas", 18, "bold"),
+                font=(_MONO_FAMILY, 18, "bold"),
                 fg=color,
                 bg=_BG_DARK,
                 anchor=tk.CENTER,
@@ -179,7 +193,7 @@ class DashboardPanel(tk.LabelFrame):
 
         tk.Label(
             frame,
-            text="\u826f\u7387\u8d8b\u52e2 Yield Trend",
+            text=t("dashboard.yield_trend"),
             font=("Helvetica", 9),
             fg=_FG_DIM,
             bg=_BG,
@@ -214,7 +228,7 @@ class DashboardPanel(tk.LabelFrame):
             tk.Label(
                 self._spc_frame,
                 text=f"{display}:",
-                font=("Consolas", 9),
+                font=(_MONO_FAMILY, 9),
                 fg=_FG_DIM,
                 bg=_BG_DARK,
                 anchor=tk.W,
@@ -224,7 +238,7 @@ class DashboardPanel(tk.LabelFrame):
             lbl = tk.Label(
                 self._spc_frame,
                 text="--",
-                font=("Consolas", 9, "bold"),
+                font=(_MONO_FAMILY, 9, "bold"),
                 fg=_FG,
                 bg=_BG_DARK,
                 anchor=tk.E,
@@ -296,14 +310,21 @@ class DashboardPanel(tk.LabelFrame):
         # chronological processing.
         records.reverse()
 
-        # Rebuild counters from full DB totals.
+        # Rebuild counters from full DB totals (prefer efficient summary query).
         try:
-            all_records = db.query_records(limit=999_999_999)
-            self._total = len(all_records)
-            self._pass_count = sum(1 for r in all_records if not r.is_defective)
-            self._fail_count = sum(1 for r in all_records if r.is_defective)
+            summary = db.get_summary()
+            self._total = summary.get("total", 0)
+            self._pass_count = summary.get("pass", 0)
+            self._fail_count = self._total - self._pass_count
         except Exception:
-            logger.exception("Failed to load full record count")
+            logger.debug("get_summary() unavailable, falling back to full query")
+            try:
+                all_records = db.query_records(limit=999_999_999)
+                self._total = len(all_records)
+                self._pass_count = sum(1 for r in all_records if not r.is_defective)
+                self._fail_count = sum(1 for r in all_records if r.is_defective)
+            except Exception:
+                logger.exception("Failed to load full record count")
 
         # Rebuild rolling yield from the most recent N records.
         self._recent_results.clear()
@@ -382,8 +403,10 @@ class DashboardPanel(tk.LabelFrame):
     # -- Trend chart ------------------------------------------------------ #
 
     def _on_chart_resize(self, _event: tk.Event) -> None:  # type: ignore[type-arg]
-        """Redraw the trend chart when the canvas is resized."""
-        self._redraw_trend_chart()
+        """Debounced redraw of the trend chart when the canvas is resized."""
+        if self._resize_after_id:
+            self.after_cancel(self._resize_after_id)
+        self._resize_after_id = self.after(150, self._redraw_trend_chart)
 
     def _redraw_trend_chart(self) -> None:
         """Redraw the mini yield trend line chart on the canvas."""
@@ -447,7 +470,7 @@ class DashboardPanel(tk.LabelFrame):
                 canvas.create_text(
                     w - pad_right - 2, ry - 6,
                     text=f"{ref_val:.0f}%",
-                    fill=ref_color, font=("Consolas", 7),
+                    fill=ref_color, font=(_MONO_FAMILY, 7),
                     anchor=tk.E,
                 )
 

@@ -16,9 +16,50 @@ class TestPatchCoreParams:
     def test_n_neighbors_param(self):
         pytest.importorskip("torch")
         from shared.core.patchcore import PatchCoreInference, PatchCoreModel
-        # Just test that the parameter is accepted (full test needs trained model)
-        # We test constructor signature acceptance
-        pass  # Integration test would need a trained model
+        # Build a minimal PatchCoreModel with a tiny synthetic memory bank
+        feature_dim = 8
+        bank_size = 20
+        rng = np.random.RandomState(42)
+        memory_bank = rng.randn(bank_size, feature_dim).astype(np.float16)
+
+        model = PatchCoreModel(
+            memory_bank=memory_bank,
+            backbone_name="wide_resnet50_2",
+            layers=("layer2", "layer3"),
+            image_size=64,
+            feature_dim=feature_dim,
+            coreset_ratio=1.0,
+            threshold=None,
+            config={},
+        )
+
+        # Test that n_neighbors parameter is accepted and stored
+        n_neighbors = 5
+        inference = PatchCoreInference(
+            model=model,
+            device="cpu",
+            n_neighbors=n_neighbors,
+        )
+        assert inference._knn_k == n_neighbors
+        assert model.config["n_neighbors"] == n_neighbors
+
+        # Test with a different n_neighbors value
+        model2 = PatchCoreModel(
+            memory_bank=memory_bank,
+            backbone_name="wide_resnet50_2",
+            layers=("layer2", "layer3"),
+            image_size=64,
+            feature_dim=feature_dim,
+            coreset_ratio=1.0,
+            threshold=None,
+            config={},
+        )
+        inference2 = PatchCoreInference(
+            model=model2,
+            device="cpu",
+            n_neighbors=3,
+        )
+        assert inference2._knn_k == 3
 
 
 class TestAnomalyScorerParams:

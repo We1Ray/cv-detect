@@ -12,6 +12,18 @@ from typing import Callable, Dict, Optional
 
 from dl_anomaly.gui.platform_keys import display, display_shift
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class Toolbar(ttk.Frame):
     """Horizontal toolbar with grouped action buttons.
@@ -42,7 +54,7 @@ class Toolbar(ttk.Frame):
         style = ttk.Style()
         style.configure(
             "Toolbar.TButton",
-            font=("Segoe UI", 11),
+            font=(_FONT_FAMILY, 11),
             padding=(4, 2),
         )
 
@@ -105,7 +117,7 @@ class Toolbar(ttk.Frame):
             text=text,
             bg="#2b2b2b",
             fg="#777777",
-            font=("Segoe UI", 7),
+            font=(_FONT_FAMILY, 7),
             anchor=tk.S,
         )
         lbl.pack(side=tk.LEFT, padx=(4, 0), pady=(0, 0))
@@ -197,7 +209,7 @@ class Toolbar(ttk.Frame):
                     justify=tk.LEFT,
                     background="#1e1e1e",
                     foreground="#cccccc",
-                    font=("Segoe UI", 9),
+                    font=(_FONT_FAMILY, 9),
                     padx=8,
                     pady=4,
                 )

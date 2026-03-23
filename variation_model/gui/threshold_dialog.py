@@ -22,6 +22,18 @@ from PIL import Image, ImageTk
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # Theme constants
 _BG = "#2b2b2b"
 _BG_MEDIUM = "#3c3c3c"
@@ -177,7 +189,7 @@ class ThresholdDialog(tk.Toplevel):
 
         self._min_val_label = tk.Label(
             min_row, text="0", bg=_BG, fg=_FG_WHITE,
-            font=("Consolas", 10), width=4, anchor=tk.W,
+            font=(_MONO_FAMILY, 10), width=4, anchor=tk.W,
         )
         self._min_val_label.pack(side=tk.LEFT)
 
@@ -208,7 +220,7 @@ class ThresholdDialog(tk.Toplevel):
 
         self._max_val_label = tk.Label(
             max_row, text="255", bg=_BG, fg=_FG_WHITE,
-            font=("Consolas", 10), width=4, anchor=tk.W,
+            font=(_MONO_FAMILY, 10), width=4, anchor=tk.W,
         )
         self._max_val_label.pack(side=tk.LEFT)
 
@@ -218,7 +230,7 @@ class ThresholdDialog(tk.Toplevel):
             text="\u9078\u53d6\u50cf\u7d20: -- / -- (--%)",  # "選取像素: ..."
             bg=_BG,
             fg=_FG,
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
             anchor=tk.W,
         )
         self._info_label.pack(fill=tk.X, padx=10, pady=(2, 4))

@@ -6,21 +6,23 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
+from shared.i18n import t
+
 
 class HistoryPanel(ttk.LabelFrame):
     """A compact timestamped operation history displayed in a Treeview."""
 
     def __init__(self, parent, **kwargs) -> None:
-        super().__init__(parent, text="操作歷史", **kwargs)
+        super().__init__(parent, text=t("history.title"), **kwargs)
 
         # Treeview
         cols = ("time", "operation", "detail")
         self._tree = ttk.Treeview(
             self, columns=cols, show="headings", height=6,
         )
-        self._tree.heading("time", text="時間")
-        self._tree.heading("operation", text="操作")
-        self._tree.heading("detail", text="細節")
+        self._tree.heading("time", text=t("history.time"))
+        self._tree.heading("operation", text=t("history.operation"))
+        self._tree.heading("detail", text=t("history.detail"))
         self._tree.column("time", width=70, minwidth=60, stretch=False)
         self._tree.column("operation", width=120, minwidth=80)
         self._tree.column("detail", width=160, minwidth=80)

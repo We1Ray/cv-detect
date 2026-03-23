@@ -31,12 +31,19 @@ def log_operation(logger_or_name):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start = time.perf_counter()
-            result = func(*args, **kwargs)
-            elapsed_ms = (time.perf_counter() - start) * 1000
-            _logger.info(
-                "%s completed in %.1f ms", func.__name__, elapsed_ms,
-            )
-            return result
+            try:
+                result = func(*args, **kwargs)
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                _logger.info(
+                    "%s completed in %.1f ms", func.__name__, elapsed_ms,
+                )
+                return result
+            except Exception:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                _logger.error(
+                    "%s failed after %.1f ms", func.__name__, elapsed_ms,
+                )
+                raise
 
         return wrapper
 

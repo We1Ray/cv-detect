@@ -25,6 +25,18 @@ from PIL import Image, ImageTk
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 
 # ====================================================================== #
 #  訓練對話框                                                              #
@@ -124,7 +136,7 @@ class TrainingDialog(tk.Toplevel):
 
         self._log_text = tk.Text(
             log_frame, height=6, wrap=tk.WORD, state=tk.DISABLED,
-            bg="#1e1e1e", fg="#cccccc", font=("Consolas", 9),
+            bg="#1e1e1e", fg="#cccccc", font=(_MONO_FAMILY, 9),
         )
         scroll = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self._log_text.yview)
         self._log_text.configure(yscrollcommand=scroll.set)

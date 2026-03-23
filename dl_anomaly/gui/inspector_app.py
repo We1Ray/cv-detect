@@ -71,6 +71,19 @@ from dl_anomaly.gui.platform_keys import (
 
 logger = logging.getLogger(__name__)
 
+# Platform-aware font families for cross-platform compatibility
+import platform as _platform
+_SYSTEM = _platform.system()
+if _SYSTEM == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYSTEM == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = "Consolas"
+
 
 class InspectorApp(
     MenuMixin,
@@ -109,6 +122,9 @@ class InspectorApp(
         # Language variable for menu radiobuttons
         from shared.i18n import get_language
         self._lang_var = tk.StringVar(value=get_language())
+
+        # Flag to prevent background-thread callbacks after close
+        self._closing = False
 
         # Core state
         self._inference_pipeline = None  # InferencePipeline instance
@@ -180,7 +196,7 @@ class InspectorApp(
         style.map("Treeview", background=[("selected", sel_bg)])
         style.configure("TProgressbar", troughcolor=trough, background="#4fc3f7")
         style.configure("TSeparator", background="#555555")
-        style.configure("Toolbar.TButton", background="#3c3c3c", foreground=fg, font=("Segoe UI", 11), padding=(4, 2))
+        style.configure("Toolbar.TButton", background="#3c3c3c", foreground=fg, font=(_FONT_FAMILY, 11), padding=(4, 2))
 
         style.configure("Success.Status.TLabel", background="#2e7d32", foreground="#ffffff")
 
@@ -458,7 +474,7 @@ class InspectorApp(
         # Title
         tk.Label(
             dlg, text="\u9375\u76e4\u5feb\u6377\u9375", bg="#2b2b2b", fg="#e0e0e0",
-            font=("Segoe UI", 14, "bold"), pady=8,
+            font=(_FONT_FAMILY, 14, "bold"), pady=8,
         ).pack(fill=tk.X, padx=16)
 
         # Scrollable frame
@@ -511,7 +527,7 @@ class InspectorApp(
             # Category header
             tk.Label(
                 container, text=cat_name, bg="#2b2b2b", fg="#0078d4",
-                font=("Segoe UI", 10, "bold"), anchor=tk.W,
+                font=(_FONT_FAMILY, 10, "bold"), anchor=tk.W,
             ).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(8, 2))
             row += 1
 
@@ -526,12 +542,12 @@ class InspectorApp(
                 key_frame.grid(row=row, column=0, sticky=tk.E, padx=(0, 8), pady=1)
                 tk.Label(
                     key_frame, text=key, bg="#333333", fg="#cccccc",
-                    font=("Consolas", 9, "bold"),
+                    font=(_MONO_FAMILY, 9, "bold"),
                 ).pack()
                 # Description
                 tk.Label(
                     container, text=desc, bg="#2b2b2b", fg="#b0b0b0",
-                    font=("Segoe UI", 9), anchor=tk.W,
+                    font=(_FONT_FAMILY, 9), anchor=tk.W,
                 ).grid(row=row, column=1, sticky=tk.W, pady=1)
                 row += 1
 
@@ -541,7 +557,7 @@ class InspectorApp(
         tk.Button(
             btn_frame, text="\u95dc\u9589", bg="#3c3c3c", fg="#e0e0e0",
             activebackground="#4a4a6e", activeforeground="#ffffff",
-            relief=tk.FLAT, padx=20, pady=4, font=("Segoe UI", 10),
+            relief=tk.FLAT, padx=20, pady=4, font=(_FONT_FAMILY, 10),
             command=dlg.destroy,
         ).pack(anchor=tk.E)
 
@@ -576,12 +592,16 @@ class InspectorApp(
             try:
                 result = func()
                 def _finish(r=result):
+                    if self._closing:
+                        return
                     self._progress.stop()
                     if on_done is not None:
                         on_done(r)
                 self.after(0, _finish)
             except Exception as exc:
                 def _fail(e=exc):
+                    if self._closing:
+                        return
                     self._progress.stop()
                     if on_error is not None:
                         on_error(e)
@@ -595,6 +615,14 @@ class InspectorApp(
     # ==================================================================
     # Keyboard shortcuts
     # ==================================================================
+
+    def _should_handle_key(self, event=None) -> bool:
+        """Return False if focus is on a text-input widget."""
+        w = self.focus_get()
+        if w is None:
+            return True
+        widget_class = w.winfo_class()
+        return widget_class not in ("Entry", "Text", "TCombobox", "Spinbox", "TEntry", "TSpinbox")
 
     def _bind_shortcuts(self) -> None:
         # --- Mod+key shortcuts (Cmd on macOS, Ctrl on Win/Linux) ---
@@ -619,17 +647,19 @@ class InspectorApp(
         bind_mod_shift(self, "e", lambda e: self._open_engineering_tools(), bind_all=True)
         bind_mod_shift(self, "a", lambda e: self._open_auto_tune(), bind_all=True)
 
-        # --- Plain keys (platform-independent) ---
-        self.bind_all("<space>", lambda e: self._cmd_fit())
-        self.bind_all("<plus>", lambda e: self._cmd_zoom_in())
-        self.bind_all("<equal>", lambda e: self._cmd_zoom_in())
-        self.bind_all("<minus>", lambda e: self._cmd_zoom_out())
+        # --- Plain keys (guarded: skip when focus is on text input) ---
+        self.bind_all("<space>", lambda e: self._cmd_fit() if self._should_handle_key(e) else None)
+        self.bind_all("<plus>", lambda e: self._cmd_zoom_in() if self._should_handle_key(e) else None)
+        self.bind_all("<equal>", lambda e: self._cmd_zoom_in() if self._should_handle_key(e) else None)
+        self.bind_all("<minus>", lambda e: self._cmd_zoom_out() if self._should_handle_key(e) else None)
+        self.bind_all("<Delete>", lambda e: self._cmd_delete_step() if self._should_handle_key(e) else None)
+        self.bind_all("<BackSpace>", lambda e: self._cmd_delete_step() if self._should_handle_key(e) else None)
+
+        # --- Function keys (safe to use bind_all, no conflict with text input) ---
         self.bind_all("<F5>", lambda e: self._cmd_inspect_single())
         self.bind_all("<F6>", lambda e: self._cmd_train())
         self.bind_all("<F8>", lambda e: self._toggle_script_editor())
         self.bind_all("<F9>", lambda e: self._run_script())
-        self.bind_all("<Delete>", lambda e: self._cmd_delete_step())
-        self.bind_all("<BackSpace>", lambda e: self._cmd_delete_step())
         self.bind_all("<Escape>", lambda e: self._set_active_tool("pan"))
         self.bind_all("<F1>", lambda e: self._show_shortcuts_dialog())
 
@@ -846,7 +876,7 @@ class InspectorApp(
         """Build and show the right-click context menu."""
         menu = tk.Menu(self, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                        activebackground="#3a3a5c", activeforeground="#ffffff",
-                       font=("Segoe UI", 10))
+                       font=(_FONT_FAMILY, 10))
 
         has_image = self._get_current_image() is not None
         has_region = region is not None  # (x, y, w, h)
@@ -1193,7 +1223,7 @@ class InspectorApp(
 
         row = 0
         tk.Label(dlg, text="SPC 警報參數設定", bg=bg, fg=fg,
-                 font=("Segoe UI", 12, "bold")).grid(
+                 font=(_FONT_FAMILY, 12, "bold")).grid(
             row=row, column=0, columnspan=2, **pad, sticky=tk.W)
         row += 1
 
@@ -1223,10 +1253,10 @@ class InspectorApp(
         entries: Dict[str, tk.Entry] = {}
         for label_text, key, _ in fields:
             tk.Label(dlg, text=label_text, bg=bg, fg=fg,
-                     font=("Segoe UI", 10), anchor=tk.W).grid(
+                     font=(_FONT_FAMILY, 10), anchor=tk.W).grid(
                 row=row, column=0, sticky=tk.W, **pad)
             entry = tk.Entry(dlg, bg=entry_bg, fg=fg, insertbackground=fg,
-                             font=("Segoe UI", 10), width=15)
+                             font=(_FONT_FAMILY, 10), width=15)
             entry.insert(0, defaults.get(key, ""))
             entry.grid(row=row, column=1, sticky=tk.W, **pad)
             entries[key] = entry
@@ -1237,7 +1267,7 @@ class InspectorApp(
         tk.Checkbutton(
             dlg, text="啟用 SPC 監控", variable=enabled_var,
             bg=bg, fg=fg, selectcolor="#3c3c3c", activebackground=bg,
-            activeforeground=fg, font=("Segoe UI", 10),
+            activeforeground=fg, font=(_FONT_FAMILY, 10),
         ).grid(row=row, column=0, columnspan=2, sticky=tk.W, **pad)
         row += 1
 
@@ -1275,11 +1305,11 @@ class InspectorApp(
         btn_frame.grid(row=row, column=0, columnspan=2, pady=10)
         tk.Button(btn_frame, text="確定", bg="#3c3c3c", fg=fg,
                   activebackground="#4a4a6e", activeforeground="#ffffff",
-                  relief=tk.FLAT, padx=20, pady=4, font=("Segoe UI", 10),
+                  relief=tk.FLAT, padx=20, pady=4, font=(_FONT_FAMILY, 10),
                   command=_apply).pack(side=tk.LEFT, padx=8)
         tk.Button(btn_frame, text="取消", bg="#3c3c3c", fg=fg,
                   activebackground="#4a4a6e", activeforeground="#ffffff",
-                  relief=tk.FLAT, padx=20, pady=4, font=("Segoe UI", 10),
+                  relief=tk.FLAT, padx=20, pady=4, font=(_FONT_FAMILY, 10),
                   command=dlg.destroy).pack(side=tk.LEFT, padx=8)
 
         dlg.update_idletasks()
@@ -1292,6 +1322,7 @@ class InspectorApp(
     # ==================================================================
 
     def _on_close(self) -> None:
+        self._closing = True
         # Stop live inspection if running
         if self._live_panel.is_running:
             self._live_panel.stop_inspection()

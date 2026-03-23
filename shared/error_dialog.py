@@ -7,6 +7,21 @@ from tkinter import ttk
 import traceback
 from typing import Dict, Tuple
 
+import platform as _platform
+
+from shared.i18n import t
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = _MONO_FAMILY
+
 # Maps exception type names to (code, user_message, recovery_hint).
 ERROR_MAP: Dict[str, Tuple[str, str, str]] = {
     "FileNotFoundError": (
@@ -57,7 +72,7 @@ class ErrorDialog(tk.Toplevel):
         exc: Exception,
     ) -> None:
         super().__init__(parent)
-        self.title("錯誤")
+        self.title(t("error.title"))
         self.transient(parent)
         self.grab_set()
         self.resizable(False, False)
@@ -66,7 +81,7 @@ class ErrorDialog(tk.Toplevel):
         exc_type = type(exc)
         exc_name = exc_type.__name__
         exc_qualified = f"{exc_type.__module__}.{exc_name}" if exc_type.__module__ else exc_name
-        default = ("E-UNKNOWN", "發生未預期的錯誤。", "請查看技術細節或聯絡開發人員。")
+        default = ("E-UNKNOWN", t("error.unexpected"), t("error.details"))
         code, user_msg, hint = ERROR_MAP.get(
             exc_qualified, ERROR_MAP.get(exc_name, default),
         )
@@ -81,7 +96,7 @@ class ErrorDialog(tk.Toplevel):
 
         # Error code + context
         ttk.Label(
-            main, text=f"[{code}] {context}", font=("Segoe UI", 10, "bold"),
+            main, text=f"[{code}] {context}", font=(_FONT_FAMILY, 10, "bold"),
         ).pack(anchor=tk.W)
 
         # User-friendly message
@@ -92,7 +107,7 @@ class ErrorDialog(tk.Toplevel):
         # Recovery hint
         hint_frame = ttk.Frame(main)
         hint_frame.pack(fill=tk.X, pady=(8, 0))
-        ttk.Label(hint_frame, text="建議:", font=("Segoe UI", 9, "bold")).pack(
+        ttk.Label(hint_frame, text=t("error.hint_label"), font=(_FONT_FAMILY, 9, "bold")).pack(
             anchor=tk.W,
         )
         ttk.Label(hint_frame, text=hint, wraplength=400).pack(anchor=tk.W)
@@ -100,14 +115,14 @@ class ErrorDialog(tk.Toplevel):
         # Technical details (collapsed by default)
         self._detail_var = tk.BooleanVar(value=False)
         detail_btn = ttk.Checkbutton(
-            main, text="顯示技術細節", variable=self._detail_var,
+            main, text=t("error.show_technical"), variable=self._detail_var,
             command=self._toggle_detail,
         )
         detail_btn.pack(anchor=tk.W, pady=(12, 0))
 
         self._detail_text = tk.Text(
             main, height=6, width=55, bg="#1e1e1e", fg="#cccccc",
-            font=("Consolas", 9), wrap=tk.WORD,
+            font=(_MONO_FAMILY, 9), wrap=tk.WORD,
         )
         tb = traceback.format_exception(type(exc), exc, exc.__traceback__)
         self._detail_text.insert(tk.END, "".join(tb))
@@ -118,10 +133,10 @@ class ErrorDialog(tk.Toplevel):
         btn_frame = ttk.Frame(main)
         btn_frame.pack(fill=tk.X, pady=(12, 0))
 
-        ttk.Button(btn_frame, text="複製細節", command=self._copy).pack(
+        ttk.Button(btn_frame, text=t("error.copy"), command=self._copy).pack(
             side=tk.LEFT,
         )
-        ttk.Button(btn_frame, text="確定", command=self.destroy).pack(
+        ttk.Button(btn_frame, text=t("dialog.ok"), command=self.destroy).pack(
             side=tk.RIGHT,
         )
 

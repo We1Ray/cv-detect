@@ -19,6 +19,18 @@ from PIL import Image, ImageTk
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 # Default location for saved rules
 _RULES_DIR = Path.home() / ".dl_anomaly"
 _RULES_FILE = _RULES_DIR / "compare_rules.json"
@@ -212,7 +224,7 @@ class CompareDialog(tk.Toplevel):
         self._lbl_total = ttk.Label(res, text="總差異: —")
         self._lbl_total.pack(side=tk.LEFT, padx=(0, 20))
         self._lbl_result = ttk.Label(
-            res, text="", font=("Segoe UI", 12, "bold"))
+            res, text="", font=(_FONT_FAMILY, 12, "bold"))
         self._lbl_result.pack(side=tk.LEFT)
 
         # ── Row 5: close ──
@@ -455,10 +467,10 @@ class CompareDialog(tk.Toplevel):
             ox + 4, ly, ox + 18, ly + 14, fill="#FF3C3C", outline="")
         self._canvas.create_text(
             ox + 22, ly + 7, text="超出 (B > A)", fill="white",
-            anchor=tk.W, font=("Segoe UI", 9))
+            anchor=tk.W, font=(_FONT_FAMILY, 9))
         ly += 18
         self._canvas.create_rectangle(
             ox + 4, ly, ox + 18, ly + 14, fill="#3C64FF", outline="")
         self._canvas.create_text(
             ox + 22, ly + 7, text="缺少 (A > B)", fill="white",
-            anchor=tk.W, font=("Segoe UI", 9))
+            anchor=tk.W, font=(_FONT_FAMILY, 9))

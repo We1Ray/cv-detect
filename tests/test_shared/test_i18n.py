@@ -62,7 +62,7 @@ class TestTranslation:
         translator.set_language("en")
         assert translator.get_language() == "en"
         assert translator.t("inspection.pass") == "Pass"
-        assert translator.t("app.title") == "DL Anomaly Detector"
+        assert translator.t("app.title") == "CV Defect Detector v2.0"
 
     def test_set_language_zh_cn(self, translator: Translation) -> None:
         """Switching to Simplified Chinese returns zh-CN translations."""

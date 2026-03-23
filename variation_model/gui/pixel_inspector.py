@@ -7,11 +7,15 @@ similar to Vision gray value inspection tools. Non-modal, stays on top.
 
 from __future__ import annotations
 
+import platform
 import tkinter as tk
 from tkinter import ttk
 from typing import Optional
 
 import numpy as np
+
+# Platform-aware monospace font
+_MONO_FONT = "Menlo" if platform.system() == "Darwin" else "Consolas"
 
 
 class PixelInspector(tk.Toplevel):
@@ -66,7 +70,7 @@ class PixelInspector(tk.Toplevel):
             text="X: --  Y: --",
             bg=self._BG,
             fg=self._FG,
-            font=("Consolas", 10),
+            font=(_MONO_FONT, 10),
             anchor=tk.W,
         )
         self._coord_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -76,7 +80,7 @@ class PixelInspector(tk.Toplevel):
             text="Grid:",
             bg=self._BG,
             fg=self._FG,
-            font=("Consolas", 9),
+            font=(_MONO_FONT, 9),
         ).pack(side=tk.LEFT, padx=(8, 2))
 
         self._size_var = tk.StringVar(value=str(self._grid_size))
@@ -136,7 +140,7 @@ class PixelInspector(tk.Toplevel):
                     text="--",
                     bg="#1a1a1a",
                     fg=self._FG,
-                    font=("Consolas", 8),
+                    font=(_MONO_FONT, 8),
                     anchor=tk.CENTER,
                 )
                 cell.grid(row=0, column=0, sticky="nsew")

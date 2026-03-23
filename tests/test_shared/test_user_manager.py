@@ -6,10 +6,10 @@ import pytest
 
 from shared.user_manager import UserManager, UserRecord, UserRole
 
-# Strong password that meets policy (8+ chars, 1 uppercase, 1 digit)
-_PW = "TestPass1"
-_PW2 = "NewPass22"
-_PW3 = "AltPass33"
+# Strong password that meets policy (8+ chars, 1 uppercase, 1 digit, 1 special)
+_PW = "TestPass1!"
+_PW2 = "NewPass22@"
+_PW3 = "AltPass33#"
 
 
 @pytest.fixture
@@ -40,14 +40,16 @@ class TestCreateUser:
             manager.create_user("bob", _PW2, UserRole.ENGINEER)
 
     def test_default_admin_created(self, tmp_path) -> None:
-        """On first init the default admin/admin123 account should exist."""
+        """On first init a default admin account should exist."""
         db = str(tmp_path / "fresh.db")
         mgr = UserManager(db_path=db)
-        # Default admin password is "admin123" but doesn't meet new policy;
-        # it was created internally so policy check is bypassed for defaults.
-        user = mgr.authenticate("admin", "admin123")
-        assert user is not None
-        assert user.role == UserRole.ADMIN
+        # Default admin is created with a random secure password.
+        # We verify the admin user exists by listing users.
+        users = mgr.list_users()
+        admin_users = [u for u in users if u.username == "admin"]
+        assert len(admin_users) == 1
+        assert admin_users[0].role == UserRole.ADMIN
+        assert admin_users[0].force_password_change is True
 
     def test_weak_password_rejected(self, manager: UserManager) -> None:
         """Passwords that don't meet the policy should be rejected."""
@@ -79,7 +81,7 @@ class TestAuthentication:
     def test_authenticate_wrong_password(self, manager: UserManager) -> None:
         """Wrong password should return None."""
         manager.create_user("dave", _PW, UserRole.OPERATOR)
-        assert manager.authenticate("dave", "WrongPass9") is None
+        assert manager.authenticate("dave", "WrongPass9!") is None
 
     def test_authenticate_nonexistent_user(self, manager: UserManager) -> None:
         """Non-existent user should return None."""
@@ -112,7 +114,7 @@ class TestChangePassword:
     def test_change_password_wrong_old(self, manager: UserManager) -> None:
         """change_password should return False when old password is wrong."""
         manager.create_user("gina", _PW, UserRole.OPERATOR)
-        assert manager.change_password("gina", "FakePass9", _PW2) is False
+        assert manager.change_password("gina", "FakePass9!", _PW2) is False
 
     def test_change_to_weak_password_rejected(self, manager: UserManager) -> None:
         """Changing to a weak password should raise ValueError."""
@@ -130,9 +132,14 @@ class TestPasswordPolicy:
     """Tests for check_password_policy."""
 
     def test_strong_password_accepted(self) -> None:
-        ok, msg = UserManager.check_password_policy("StrongP1")
+        ok, msg = UserManager.check_password_policy("StrongP1!")
         assert ok is True
         assert msg == ""
+
+    def test_no_special_char(self) -> None:
+        ok, msg = UserManager.check_password_policy("StrongP1")
+        assert ok is False
+        assert "special" in msg.lower()
 
     def test_too_short(self) -> None:
         ok, msg = UserManager.check_password_policy("Ab1")

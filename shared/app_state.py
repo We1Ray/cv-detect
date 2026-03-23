@@ -57,8 +57,8 @@ class AppState:
         if geo:
             try:
                 root.geometry(geo)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Failed to restore geometry: %s", exc)
 
     # -- Sash positions -----------------------------------------------------
 
@@ -70,8 +70,8 @@ class AppState:
                 positions.append(paned.sashpos(i))
             self._data["sash_positions"] = positions
             self._save()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Failed to save sash positions: %s", exc)
 
     def restore_sash_positions(self, paned) -> None:
         """Restore sash positions to a ttk.PanedWindow."""
@@ -80,8 +80,8 @@ class AppState:
             try:
                 for i, pos in enumerate(positions):
                     paned.sashpos(i, pos)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Failed to restore sash positions: %s", exc)
 
     # -- Recent files -------------------------------------------------------
 

@@ -33,6 +33,18 @@ from dl_anomaly.core.shape_matching import (
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # --------------------------------------------------------------------------- #
 #  Theme constants                                                             #
 # --------------------------------------------------------------------------- #
@@ -342,7 +354,7 @@ class ShapeMatchingDialog(tk.Toplevel):
             bg=_BG_MEDIUM,
             fg=_FG,
             insertbackground=_FG,
-            font=("Consolas", 10),
+            font=(_MONO_FAMILY, 10),
             width=6,
             relief=tk.FLAT,
             highlightthickness=1,
@@ -359,7 +371,7 @@ class ShapeMatchingDialog(tk.Toplevel):
             bg=_BG_MEDIUM,
             fg=_FG,
             insertbackground=_FG,
-            font=("Consolas", 10),
+            font=(_MONO_FAMILY, 10),
             width=6,
             relief=tk.FLAT,
             highlightthickness=1,
@@ -381,7 +393,7 @@ class ShapeMatchingDialog(tk.Toplevel):
             bg=_BG_MEDIUM,
             fg=_FG,
             insertbackground=_FG,
-            font=("Consolas", 10),
+            font=(_MONO_FAMILY, 10),
             width=6,
             relief=tk.FLAT,
             highlightthickness=1,
@@ -398,7 +410,7 @@ class ShapeMatchingDialog(tk.Toplevel):
             bg=_BG_MEDIUM,
             fg=_FG,
             insertbackground=_FG,
-            font=("Consolas", 10),
+            font=(_MONO_FAMILY, 10),
             width=6,
             relief=tk.FLAT,
             highlightthickness=1,
@@ -454,7 +466,7 @@ class ShapeMatchingDialog(tk.Toplevel):
             textvariable=self._model_status_var,
             bg=_BG,
             fg="#88cc88",
-            font=("Consolas", 9),
+            font=(_MONO_FAMILY, 9),
             anchor=tk.W,
         )
         self._model_status_label.pack(fill=tk.X, padx=12, pady=(0, 8))

@@ -5,7 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 from typing import TYPE_CHECKING
 
-from shared.i18n import available_languages
+from shared.i18n import available_languages, t
 from dl_anomaly.gui.platform_keys import accel, accel_shift
 
 if TYPE_CHECKING:
@@ -21,11 +21,11 @@ class MenuMixin:
         # -- File --
         file_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
-        file_menu.add_command(label="\u958b\u555f\u5716\u7247...", command=self._cmd_open_image, accelerator=accel("O"))
-        file_menu.add_command(label="\u958b\u555f\u8cc7\u6599\u593e...", command=self._cmd_open_dir)
+        file_menu.add_command(label=t("menu.file.open") + "...", command=self._cmd_open_image, accelerator=accel("O"))
+        file_menu.add_command(label=t("menu.file.open_folder") + "...", command=self._cmd_open_dir)
         file_menu.add_separator()
-        file_menu.add_command(label="\u5132\u5b58\u7576\u524d\u5716\u7247...", command=self._cmd_save_image, accelerator=accel("S"))
-        file_menu.add_command(label="\u5132\u5b58\u6240\u6709\u6b65\u9a5f...", command=self._cmd_save_all)
+        file_menu.add_command(label=t("menu.file.save") + "...", command=self._cmd_save_image, accelerator=accel("S"))
+        file_menu.add_command(label=t("menu.file.save_report") + "...", command=self._cmd_save_all)
         file_menu.add_separator()
         file_menu.add_command(label="\u5132\u5b58\u6d41\u7a0b...", command=self._cmd_save_recipe)
         file_menu.add_command(label="\u8f09\u5165\u4e26\u5957\u7528\u6d41\u7a0b...", command=self._cmd_load_and_apply_recipe)
@@ -35,7 +35,7 @@ class MenuMixin:
         file_menu.add_separator()
         self._recent_menu = tk.Menu(file_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                                     activebackground="#3a3a5c", activeforeground="#ffffff")
-        file_menu.add_cascade(label="\u6700\u8fd1\u958b\u555f", menu=self._recent_menu)
+        file_menu.add_cascade(label=t("menu.file.recent"), menu=self._recent_menu)
         file_menu.add_separator()
         lang_menu = tk.Menu(file_menu, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
@@ -50,8 +50,8 @@ class MenuMixin:
             )
         file_menu.add_cascade(label="\u8a9e\u8a00 / Language", menu=lang_menu)
         file_menu.add_separator()
-        file_menu.add_command(label="\u7d50\u675f", command=self._on_close)
-        menubar.add_cascade(label="\u6a94\u6848", menu=file_menu)
+        file_menu.add_command(label=t("menu.file.exit"), command=self._on_close)
+        menubar.add_cascade(label=t("menu.file.label"), menu=file_menu)
 
         # -- Operations --
         ops_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
@@ -69,7 +69,7 @@ class MenuMixin:
         ops_menu.add_separator()
         ops_menu.add_command(label="VM \u55ae\u5f35\u6aa2\u6e2c", command=self._cmd_vm_inspect_single)
         ops_menu.add_command(label="VM \u6279\u6b21\u6aa2\u6e2c...", command=self._cmd_vm_inspect_batch)
-        menubar.add_cascade(label="\u64cd\u4f5c", menu=ops_menu)
+        menubar.add_cascade(label=t("panel.operations"), menu=ops_menu)
 
         # -- Region --
         region_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
@@ -250,7 +250,7 @@ class MenuMixin:
 
         vision_menu.add_separator()
         vision_menu.add_command(label="\u8173\u672c\u7de8\u8f2f\u5668", command=self._toggle_script_editor, accelerator="F8")
-        menubar.add_cascade(label="\u5f71\u50cf\u8655\u7406", menu=vision_menu)
+        menubar.add_cascade(label=t("operations.preprocessing"), menu=vision_menu)
 
         # -- Model --
         model_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
@@ -292,28 +292,28 @@ class MenuMixin:
         pipeline_model_menu.add_separator()
         pipeline_model_menu.add_command(label="\u7ba1\u7dda\u6a21\u578b\u7ba1\u7406...", command=self._open_pipeline_model_manager)
         model_menu.add_cascade(label="\u7ba1\u7dda\u6a21\u578b (Pipeline Model)", menu=pipeline_model_menu)
-        menubar.add_cascade(label="\u6a21\u578b", menu=model_menu)
+        menubar.add_cascade(label=t("menu.model.label"), menu=model_menu)
 
         # -- View --
         view_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
-        view_menu.add_command(label="\u7e2e\u653e\u81f3\u7a97\u53e3", command=self._cmd_fit, accelerator="Space")
-        view_menu.add_command(label="\u653e\u5927", command=self._cmd_zoom_in, accelerator="+")
-        view_menu.add_command(label="\u7e2e\u5c0f", command=self._cmd_zoom_out, accelerator="-")
-        view_menu.add_command(label="1:1 \u539f\u59cb\u5927\u5c0f", command=self._cmd_actual_size)
+        view_menu.add_command(label=t("menu.view.fit"), command=self._cmd_fit, accelerator="Space")
+        view_menu.add_command(label=t("menu.view.zoom_in"), command=self._cmd_zoom_in, accelerator="+")
+        view_menu.add_command(label=t("menu.view.zoom_out"), command=self._cmd_zoom_out, accelerator="-")
+        view_menu.add_command(label="1:1 " + t("menu.view.original"), command=self._cmd_actual_size)
         view_menu.add_separator()
         view_menu.add_command(label="\u76f4\u65b9\u5716...", command=self._cmd_histogram)
         view_menu.add_command(label="\u640d\u5931\u66f2\u7dda", command=self._cmd_toggle_loss_curve)
         view_menu.add_command(label="\u91cd\u5efa\u5c0d\u6bd4...", command=self._cmd_reconstruction_compare)
         view_menu.add_command(label="\u5716\u7247\u6bd4\u5c0d...", command=self._cmd_compare_steps)
         view_menu.add_command(label="\u6279\u6b21\u5716\u7247\u6bd4\u5c0d...", command=self._cmd_batch_compare_steps)
-        menubar.add_cascade(label="\u6aa2\u8996", menu=view_menu)
+        menubar.add_cascade(label=t("menu.view.label"), menu=view_menu)
 
         # -- Tools (工具) --
         tools_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                              activebackground="#3a3a5c", activeforeground="#ffffff")
-        tools_menu.add_command(label="\u5f62\u72c0\u5339\u914d...", command=self._open_shape_matching, accelerator=accel("M"))
-        tools_menu.add_command(label="\u91cf\u6e2c\u5de5\u5177...", command=self._open_metrology, accelerator=accel_shift("M"))
+        tools_menu.add_command(label=t("menu.tools.shape_matching") + "...", command=self._open_shape_matching, accelerator=accel("M"))
+        tools_menu.add_command(label=t("menu.tools.metrology") + "...", command=self._open_metrology, accelerator=accel_shift("M"))
         tools_menu.add_separator()
         tools_menu.add_command(label="ROI \u7ba1\u7406...", command=self._open_roi_manager, accelerator=accel("R"))
         tools_menu.add_separator()
@@ -321,20 +321,20 @@ class MenuMixin:
         tools_menu.add_separator()
         tools_menu.add_command(label="\u6aa2\u6e2c\u5de5\u5177 (FFT/\u8272\u5f69/OCR/\u689d\u78bc)...", command=self._open_inspection_tools, accelerator=accel_shift("T"))
         tools_menu.add_separator()
-        tools_menu.add_command(label="\u5de5\u7a0b\u5de5\u5177 (\u6a19\u5b9a/\u7ba1\u7dda/SPC/\u62fc\u63a5)...", command=self._open_engineering_tools, accelerator=accel_shift("E"))
+        tools_menu.add_command(label=t("menu.tools.engineering_tools") + "...", command=self._open_engineering_tools, accelerator=accel_shift("E"))
         tools_menu.add_separator()
         tools_menu.add_command(label="MVP \u5de5\u5177 (\u76f8\u6a5f/\u6d41\u7a0b/\u5831\u8868)...", command=self._open_mvp_tools, accelerator=accel_shift("V"))
         tools_menu.add_separator()
         tools_menu.add_command(label="\u81ea\u52d5\u95be\u503c\u6821\u6e96...", command=self._open_auto_tune, accelerator=accel_shift("A"))
         tools_menu.add_separator()
         tools_menu.add_command(label="SPC \u8b66\u5831\u8a2d\u5b9a...", command=self._open_spc_settings)
-        menubar.add_cascade(label="\u5de5\u5177", menu=tools_menu)
+        menubar.add_cascade(label=t("menu.tools.label"), menu=tools_menu)
 
         # -- Help --
         help_menu = tk.Menu(menubar, tearoff=0, bg="#2b2b2b", fg="#e0e0e0",
                             activebackground="#3a3a5c", activeforeground="#ffffff")
-        help_menu.add_command(label="\u5feb\u6377\u9375...", command=self._cmd_shortcuts)
-        help_menu.add_command(label="\u95dc\u65bc...", command=self._cmd_about)
-        menubar.add_cascade(label="\u5e6b\u52a9", menu=help_menu)
+        help_menu.add_command(label=t("menu.help.shortcuts") + "...", command=self._cmd_shortcuts)
+        help_menu.add_command(label=t("menu.help.about") + "...", command=self._cmd_about)
+        menubar.add_cascade(label=t("menu.help.label"), menu=help_menu)
 
         self.configure(menu=menubar)

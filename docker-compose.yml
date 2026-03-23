@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cv-detect-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - CV_DETECT_API_KEY=${CV_DETECT_API_KEY:-}
+      - CV_DETECT_CORS_ORIGINS=${CV_DETECT_CORS_ORIGINS:-}
+    volumes:
+      - ./models:/app/models:ro
+      - ./dl_anomaly/checkpoints:/app/dl_anomaly/checkpoints:ro
+      - ./variation_model/models:/app/variation_model/models:ro
+      - results_data:/app/results
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  results_data:

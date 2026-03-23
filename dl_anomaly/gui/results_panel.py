@@ -12,6 +12,21 @@ from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 
+import platform as _platform
+
+from shared.i18n import t
+
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class ResultsPanel(ttk.Frame):
     """Inspection results summary with statistics and export."""
@@ -31,7 +46,7 @@ class ResultsPanel(ttk.Frame):
 
     def _build_ui(self) -> None:
         # ── Latest Result Section ──
-        latest_frame = ttk.LabelFrame(self, text="\u6700\u65b0\u6aa2\u6e2c\u7d50\u679c")
+        latest_frame = ttk.LabelFrame(self, text=t("results.latest_result"))
         latest_frame.pack(fill=tk.X, padx=4, pady=(4, 2))
 
         self._result_indicator = tk.Canvas(
@@ -45,45 +60,45 @@ class ResultsPanel(ttk.Frame):
         info_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4, pady=4)
 
         self._result_label = tk.Label(
-            info_frame, text="\u5c1a\u7121\u6aa2\u6e2c\u7d50\u679c",
+            info_frame, text=t("results.no_results"),
             bg="#2b2b2b", fg="#888888",
-            font=("Segoe UI", 11, "bold"), anchor=tk.W,
+            font=(_FONT_FAMILY, 11, "bold"), anchor=tk.W,
         )
         self._result_label.pack(fill=tk.X)
 
         self._detail_label = tk.Label(
             info_frame, text="",
             bg="#2b2b2b", fg="#aaaaaa",
-            font=("Segoe UI", 8), anchor=tk.W,
+            font=(_FONT_FAMILY, 8), anchor=tk.W,
         )
         self._detail_label.pack(fill=tk.X)
 
         # ── Aggregate Statistics ──
-        stats_frame = ttk.LabelFrame(self, text="\u7d71\u8a08\u6458\u8981")
+        stats_frame = ttk.LabelFrame(self, text=t("results.stats_summary"))
         stats_frame.pack(fill=tk.X, padx=4, pady=2)
 
         self._stat_vars = {}
         stat_fields = [
-            ("total", "\u6aa2\u6e2c\u7e3d\u6578:"),
-            ("pass_count", "\u901a\u904e:"),
-            ("fail_count", "\u4e0d\u826f:"),
-            ("yield_rate", "\u826f\u7387:"),
-            ("avg_score", "\u5e73\u5747\u5206\u6578:"),
-            ("max_score", "\u6700\u9ad8\u5206\u6578:"),
+            ("total", t("results.total_inspected")),
+            ("pass_count", t("results.pass_count")),
+            ("fail_count", t("results.fail_count")),
+            ("yield_rate", t("results.yield_rate")),
+            ("avg_score", t("results.avg_score")),
+            ("max_score", t("results.max_score")),
         ]
         for i, (key, label) in enumerate(stat_fields):
             row, col = divmod(i, 2)
-            ttk.Label(stats_frame, text=label, font=("Segoe UI", 8)).grid(
+            ttk.Label(stats_frame, text=label, font=(_FONT_FAMILY, 8)).grid(
                 row=row, column=col * 2, sticky=tk.W, padx=(8, 2), pady=1,
             )
             var = tk.StringVar(value="--")
             self._stat_vars[key] = var
-            ttk.Label(stats_frame, textvariable=var, font=("Segoe UI", 8, "bold")).grid(
+            ttk.Label(stats_frame, textvariable=var, font=(_FONT_FAMILY, 8, "bold")).grid(
                 row=row, column=col * 2 + 1, sticky=tk.W, padx=(0, 12), pady=1,
             )
 
         # ── Results Table ──
-        table_frame = ttk.LabelFrame(self, text="\u6aa2\u6e2c\u7d00\u9304")
+        table_frame = ttk.LabelFrame(self, text=t("results.inspection_log"))
         table_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
 
         columns = ("No", "Result", "Score", "Defects")
@@ -92,9 +107,9 @@ class ResultsPanel(ttk.Frame):
         )
         col_configs = {
             "No": ("#", 40),
-            "Result": ("\u7d50\u679c", 60),
-            "Score": ("\u5206\u6578", 70),
-            "Defects": ("\u7f3a\u9677\u6578", 60),
+            "Result": (t("results.result"), 60),
+            "Score": (t("results.score"), 70),
+            "Defects": (t("results.defect_count"), 60),
         }
         for col_id, (heading, width) in col_configs.items():
             self._results_tree.heading(col_id, text=heading)
@@ -107,6 +122,16 @@ class ResultsPanel(ttk.Frame):
         self._results_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Empty-state placeholder label
+        self._empty_label = tk.Label(
+            table_frame,
+            text=t("results.no_results"),
+            bg="#1e1e1e",
+            fg="#666666",
+            font=(_FONT_FAMILY, 11),
+        )
+        self._empty_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
         # Tag styling for pass/fail rows
         self._results_tree.tag_configure("pass", foreground="#4caf50")
         self._results_tree.tag_configure("fail", foreground="#f44336")
@@ -116,17 +141,17 @@ class ResultsPanel(ttk.Frame):
         export_frame.pack(fill=tk.X, padx=4, pady=(2, 4))
 
         ttk.Button(
-            export_frame, text="\U0001F4C4 \u532F\u51FA CSV",
+            export_frame, text=t("results.export_csv"),
             command=self._export_csv,
         ).pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
 
         ttk.Button(
-            export_frame, text="\U0001F4D1 \u532F\u51FA PDF",
+            export_frame, text=t("results.export_pdf"),
             command=self._export_pdf,
         ).pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
 
         ttk.Button(
-            export_frame, text="\U0001F5D1 \u6e05\u9664\u7d00\u9304",
+            export_frame, text=t("results.clear_records"),
             command=self._clear_results,
         ).pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
 
@@ -153,6 +178,9 @@ class ResultsPanel(ttk.Frame):
         }
         self._results.append(result)
 
+        # Hide empty-state placeholder
+        self._empty_label.place_forget()
+
         # Update latest result indicator
         self._update_latest(result)
 
@@ -174,10 +202,12 @@ class ResultsPanel(ttk.Frame):
         for item in self._results_tree.get_children():
             self._results_tree.delete(item)
         self._draw_idle_indicator()
-        self._result_label.configure(text="\u5c1a\u7121\u6aa2\u6e2c\u7d50\u679c", fg="#888888")
+        self._result_label.configure(text=t("results.no_results"), fg="#888888")
         self._detail_label.configure(text="")
         for var in self._stat_vars.values():
             var.set("--")
+        # Show empty-state placeholder
+        self._empty_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
     # ------------------------------------------------------------------
     # Internal
@@ -195,7 +225,7 @@ class ResultsPanel(ttk.Frame):
             self._result_label.configure(text="NG \u2718", fg="#f44336")
             self._draw_fail_indicator()
 
-        detail = f"\u5206\u6578: {score:.4f}  |  \u7f3a\u9677: {result['defect_count']}"
+        detail = f"{t('results.score')}: {score:.4f}  |  {t('results.defect_count')}: {result['defect_count']}"
         if result.get("image_name"):
             detail += f"  |  {result['image_name']}"
         self._detail_label.configure(text=detail)
@@ -226,17 +256,17 @@ class ResultsPanel(ttk.Frame):
         c = self._result_indicator
         c.delete("all")
         c.create_oval(5, 5, 35, 35, fill="#2e7d32", outline="#4caf50", width=2)
-        c.create_text(20, 20, text="\u2714", fill="white", font=("Segoe UI", 14, "bold"))
+        c.create_text(20, 20, text="\u2714", fill="white", font=(_FONT_FAMILY, 14, "bold"))
 
     def _draw_fail_indicator(self) -> None:
         c = self._result_indicator
         c.delete("all")
         c.create_oval(5, 5, 35, 35, fill="#c62828", outline="#f44336", width=2)
-        c.create_text(20, 20, text="\u2718", fill="white", font=("Segoe UI", 14, "bold"))
+        c.create_text(20, 20, text="\u2718", fill="white", font=(_FONT_FAMILY, 14, "bold"))
 
     def _export_csv(self) -> None:
         if not self._results:
-            messagebox.showinfo("\u8cc7\u8a0a", "\u6c92\u6709\u53ef\u532F\u51FA\u7684\u7d50\u679c")
+            messagebox.showinfo(t("results.info"), t("results.no_export_data"))
             return
         if self._on_export_csv:
             self._on_export_csv(self._results)
@@ -260,13 +290,13 @@ class ResultsPanel(ttk.Frame):
 
     def _export_pdf(self) -> None:
         if not self._results:
-            messagebox.showinfo("\u8cc7\u8a0a", "\u6c92\u6709\u53ef\u532F\u51FA\u7684\u7d50\u679c")
+            messagebox.showinfo(t("results.info"), t("results.no_export_data"))
             return
         if self._on_export_pdf:
             self._on_export_pdf(self._results)
         else:
-            messagebox.showinfo("\u8cc7\u8a0a", "\u8acb\u4f7f\u7528 \u5de5\u5177 > MVP \u5de5\u5177 \u4e2d\u7684 PDF \u5831\u8868\u529f\u80fd")
+            messagebox.showinfo(t("results.info"), t("results.use_pdf_tool"))
 
     def _clear_results(self) -> None:
-        if self._results and messagebox.askyesno("\u78ba\u8a8d", "\u78ba\u5b9a\u8981\u6e05\u9664\u6240\u6709\u6aa2\u6e2c\u7d00\u9304\u55ce\uff1f"):
+        if self._results and messagebox.askyesno(t("results.confirm"), t("results.confirm_clear")):
             self.clear()

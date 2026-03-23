@@ -23,6 +23,18 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # --------------------------------------------------------------------------- #
 # Theme constants
 # --------------------------------------------------------------------------- #
@@ -527,7 +539,7 @@ class InspectionToolsDialog(tk.Toplevel):
         tk.Label(res_row, text="結果:", **_LABEL_KW).pack(side=tk.LEFT, padx=(0, 4))
         tk.Label(
             res_row, textvariable=self._de_result_var,
-            bg=_BG, fg="#88cc88", font=("Consolas", 9),
+            bg=_BG, fg="#88cc88", font=(_MONO_FAMILY, 9),
         ).pack(side=tk.LEFT, padx=(0, 8))
         self._de_verdict_label = tk.Label(
             res_row, textvariable=self._de_verdict_var,
@@ -569,7 +581,7 @@ class InspectionToolsDialog(tk.Toplevel):
         # Results display (scrolled text)
         self._color_result_text = tk.Text(
             tools_lf, height=12, width=36,
-            bg=_CANVAS_BG, fg=_FG, font=("Consolas", 9),
+            bg=_CANVAS_BG, fg=_FG, font=(_MONO_FAMILY, 9),
             insertbackground=_FG, relief=tk.FLAT, state=tk.DISABLED,
         )
         self._color_result_text.pack(fill=tk.BOTH, expand=True, pady=(6, 0))

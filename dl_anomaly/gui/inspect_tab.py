@@ -28,6 +28,18 @@ from dl_anomaly.visualization.report import save_result_image
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 class InspectTab(ttk.Frame):
     """Inspection tab: load a checkpoint, inspect images, browse results."""
@@ -89,7 +101,7 @@ class InspectTab(ttk.Frame):
 
         # Result label
         self._result_var = tk.StringVar(value="結果：--")
-        result_lbl = ttk.Label(bot, textvariable=self._result_var, font=("Segoe UI", 11, "bold"))
+        result_lbl = ttk.Label(bot, textvariable=self._result_var, font=(_FONT_FAMILY, 11, "bold"))
         result_lbl.pack(side=tk.LEFT, padx=4)
 
         self._score_var = tk.StringVar(value="分數：--")

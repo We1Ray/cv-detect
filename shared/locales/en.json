@@ -1,25 +1,166 @@
 {
   "app": {
-    "title": "DL Anomaly Detector",
-    "standby": "Ready"
+    "title": "CV Defect Detector v2.0",
+    "standby": "Ready",
+    "processing": "Processing...",
+    "completed": "Completed"
   },
   "menu": {
     "file": {
+      "label": "File",
       "open": "Open Image",
-      "save": "Save",
+      "open_folder": "Open Folder",
+      "save": "Save Result",
+      "save_report": "Export Report",
+      "recent": "Recent Files",
       "exit": "Exit"
     },
+    "edit": {
+      "label": "Edit",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "view": {
+      "label": "View",
+      "zoom_in": "Zoom In",
+      "zoom_out": "Zoom Out",
+      "fit": "Fit to Window",
+      "original": "Original Size",
+      "heatmap": "Heatmap Overlay",
+      "pixel_inspector": "Pixel Inspector",
+      "shortcuts": "Shortcuts"
+    },
     "tools": {
+      "label": "Tools",
       "threshold": "Threshold Segmentation",
-      "shape_matching": "Shape Matching"
+      "morphology": "Morphological Operations",
+      "blob": "Blob Analysis",
+      "shape_matching": "Shape Matching",
+      "metrology": "Metrology",
+      "edge": "Edge Detection",
+      "color_inspect": "Color Inspection",
+      "frequency": "Frequency Analysis",
+      "ocr": "OCR",
+      "barcode": "Barcode Scan",
+      "calibration": "Calibration",
+      "engineering_tools": "Engineering Tools"
+    },
+    "model": {
+      "label": "Model",
+      "train": "Train Model",
+      "inspect": "Start Inspection",
+      "load": "Load Model",
+      "export_onnx": "Export ONNX"
+    },
+    "help": {
+      "label": "Help",
+      "about": "About",
+      "shortcuts": "Keyboard Shortcuts"
     }
+  },
+  "tabs": {
+    "train": "Train",
+    "inspect": "Inspect",
+    "settings": "Settings"
+  },
+  "panel": {
+    "operations": "Operations",
+    "properties": "Properties",
+    "results": "Results",
+    "quick_actions": "Quick Actions",
+    "history": "History"
+  },
+  "operations": {
+    "preprocessing": "Preprocessing",
+    "detection": "Detection",
+    "postprocessing": "Post-processing",
+    "analysis": "Analysis"
+  },
+  "results": {
+    "no_results": "No results yet",
+    "time": "Time",
+    "operation": "Operation",
+    "detail": "Detail",
+    "score": "Score",
+    "judgment": "Judgment",
+    "defects": "Defects",
+    "image": "Image",
+    "clear": "Clear",
+    "export": "Export",
+    "latest_result": "Latest Result",
+    "stats_summary": "Statistics",
+    "total_inspected": "Total:",
+    "pass_count": "Pass:",
+    "fail_count": "Fail:",
+    "yield_rate": "Yield:",
+    "avg_score": "Avg Score:",
+    "max_score": "Max Score:",
+    "inspection_log": "Inspection Log",
+    "result": "Result",
+    "defect_count": "Defects",
+    "export_csv": "Export CSV",
+    "export_pdf": "Export PDF",
+    "clear_records": "Clear Records",
+    "no_export_data": "No results to export",
+    "use_pdf_tool": "Please use Tools > MVP Tools for PDF report",
+    "confirm_clear": "Are you sure you want to clear all records?",
+    "confirm": "Confirm",
+    "info": "Info"
+  },
+  "history": {
+    "title": "Operation History",
+    "time": "Time",
+    "operation": "Operation",
+    "detail": "Detail"
+  },
+  "dialog": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "reset": "Reset"
+  },
+  "error": {
+    "title": "Error",
+    "unexpected": "An unexpected error occurred",
+    "details": "Details",
+    "copy": "Copy Details",
+    "copied": "Copied to clipboard",
+    "no_image": "Please open an image first",
+    "file_not_found": "File not found: {path}",
+    "invalid_param": "Invalid parameter: {param}",
+    "hint_label": "Hint:",
+    "show_technical": "Show Technical Details"
+  },
+  "validation": {
+    "image_required": "Image input required",
+    "image_empty": "Image must not be empty",
+    "image_type": "Image must be a numpy ndarray",
+    "image_2d_3d": "Image must be a 2D or 3D array",
+    "param_positive": "Parameter '{name}' must be positive",
+    "param_non_negative": "Parameter '{name}' must be non-negative",
+    "param_range": "Parameter '{name}' must be between {min} and {max}",
+    "none_error": "{name} must not be None",
+    "ndarray_error": "{name} must be numpy.ndarray, got {actual}",
+    "ndim_error": "{name} must be 2D or 3D, got ndim={ndim}",
+    "empty_error": "{name} must not be empty (size=0)",
+    "integer_error": "{name} must be an integer, got {value}",
+    "min_error": "{name} must be >= {min}, got {value}",
+    "odd_error": "{name} must be odd, got {value}",
+    "numeric_error": "{name} must be numeric, got {actual}",
+    "positive_error": "{name} must be > 0, got {value}",
+    "range_error": "{name} must be in [{min}, {max}], got {value}"
   },
   "inspection": {
     "pass": "Pass",
     "fail": "Defect",
     "score": "Score",
     "defect_count": "Defect Count",
-    "result": "Inspection Result"
+    "result": "Inspection Result",
+    "processing_time": "Processing Time"
   },
   "judgment": {
     "pass": "PASS",
@@ -34,10 +175,12 @@
   },
   "dashboard": {
     "yield_rate": "Yield Rate",
+    "yield_trend": "Yield Trend",
     "total": "Total",
     "pass_count": "Pass",
     "fail_count": "Fail",
-    "mean_score": "Mean Score"
+    "mean_score": "Mean Score",
+    "spc_title": " SPC Dashboard "
   },
   "live": {
     "title": " Live Inspection Panel ",
@@ -62,5 +205,22 @@
     "log_started": "Live inspection started",
     "log_stopped": "Live inspection stopped",
     "error_start_failed": "Start failed: {error}"
+  },
+  "spc": {
+    "title": "SPC - Statistical Process Control",
+    "mean": "Mean",
+    "std": "Std Dev",
+    "ucl": "UCL",
+    "lcl": "LCL",
+    "cpk": "Cpk",
+    "alert": "Alert"
+  },
+  "project": {
+    "title": "Project Management",
+    "new": "New Project",
+    "open": "Open Project",
+    "save": "Save Project",
+    "name": "Project Name",
+    "path": "Project Path"
   }
 }

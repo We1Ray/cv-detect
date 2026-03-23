@@ -20,8 +20,21 @@ from enum import Enum, auto
 from tkinter import ttk
 from typing import Callable, Dict, List, Optional, Tuple
 
+import platform as _platform
 import numpy as np
 from PIL import Image, ImageTk
+
+# Platform-aware font families
+_SYSTEM = _platform.system()
+if _SYSTEM == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYSTEM == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = "Consolas"
 
 
 class ActiveTool(Enum):
@@ -163,7 +176,7 @@ class ImageViewer(ttk.Frame):
         items.append(self._canvas.create_text(
             cx, cy - 80,
             text="DL \u7570\u5e38\u5075\u6e2c\u5668",
-            font=("Segoe UI", 24, "bold"),
+            font=(_FONT_FAMILY, 24, "bold"),
             fill="#555555",
             anchor=tk.CENTER,
         ))
@@ -172,7 +185,7 @@ class ImageViewer(ttk.Frame):
         items.append(self._canvas.create_text(
             cx, cy - 45,
             text="Industrial Vision Inspection",
-            font=("Segoe UI", 11),
+            font=(_FONT_FAMILY, 11),
             fill="#444444",
             anchor=tk.CENTER,
         ))
@@ -204,7 +217,7 @@ class ImageViewer(ttk.Frame):
             items.append(self._canvas.create_text(
                 cx - 75, y,
                 text=key,
-                font=("Consolas", 9, "bold"),
+                font=(_MONO_FAMILY, 9, "bold"),
                 fill="#888888",
                 anchor=tk.CENTER,
             ))
@@ -212,7 +225,7 @@ class ImageViewer(ttk.Frame):
             items.append(self._canvas.create_text(
                 cx - 30, y,
                 text=desc,
-                font=("Segoe UI", 10),
+                font=(_FONT_FAMILY, 10),
                 fill="#666666",
                 anchor=tk.W,
             ))
@@ -221,7 +234,7 @@ class ImageViewer(ttk.Frame):
         items.append(self._canvas.create_text(
             cx, cy + len(hints) * 28 + 20,
             text="\u62d6\u653e\u5716\u7247\u5230\u6b64\u8655\u6216\u4f7f\u7528\u9078\u55ae\u958b\u555f\u6a94\u6848",
-            font=("Segoe UI", 9),
+            font=(_FONT_FAMILY, 9),
             fill="#3a3a3a",
             anchor=tk.CENTER,
         ))
@@ -738,7 +751,7 @@ class ImageViewer(ttk.Frame):
         self._canvas.create_text(
             label_x, label_y,
             text=text, fill="#ffcc00", anchor=tk.NW,
-            font=("Consolas", 9), tags="region_sel",
+            font=(_MONO_FAMILY, 9), tags="region_sel",
         )
 
     def _draw_final_region_rect(self, ix: int, iy: int, w: int, h: int) -> None:
@@ -754,7 +767,7 @@ class ImageViewer(ttk.Frame):
         self._canvas.create_text(
             cx2 + 4, cy2 + 4,
             text=text, fill="#ffcc00", anchor=tk.NW,
-            font=("Consolas", 9, "bold"), tags="region_sel",
+            font=(_MONO_FAMILY, 9, "bold"), tags="region_sel",
         )
 
     def _clear_region_selection(self) -> None:

@@ -30,6 +30,18 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 
 # ====================================================================== #
 #  Theme constants                                                        #
@@ -522,6 +534,12 @@ class ScriptInterpreter:
         elif isinstance(node, ast.Attribute):
             obj = self._eval_expr(node.value)
             attr_name = node.attr
+            # Block dunder attribute access for security
+            if attr_name.startswith("__"):
+                raise ScriptError(
+                    f"Access to private/protected attribute '{attr_name}' is not allowed.",
+                    line=getattr(node, "lineno", 0),
+                )
             try:
                 return getattr(obj, attr_name)
             except AttributeError:
@@ -1353,7 +1371,7 @@ class ScriptEditor(ttk.Frame):
             "bg": _BG_MEDIUM, "fg": "#e0e0e0",
             "activebackground": _ACCENT, "activeforeground": "#ffffff",
             "bd": 0, "padx": 8, "pady": 3,
-            "font": ("Consolas", 9),
+            "font": (_MONO_FAMILY, 9),
         }
 
         self._btn_run = tk.Button(
@@ -1406,7 +1424,7 @@ class ScriptEditor(ttk.Frame):
             insertbackground="#ffffff",
             selectbackground="#264f78",
             selectforeground="#ffffff",
-            font=("Consolas", 11),
+            font=(_MONO_FAMILY, 11),
             undo=True,
             tabs="    ",
             bd=0,
@@ -1449,7 +1467,7 @@ class ScriptEditor(ttk.Frame):
             state=tk.DISABLED,
             bg=_CANVAS_BG,
             fg=_FG_LIGHT,
-            font=("Consolas", 11),
+            font=(_MONO_FAMILY, 11),
             bd=0,
             padx=4,
             pady=4,
@@ -1520,7 +1538,7 @@ class ScriptEditor(ttk.Frame):
                 anchor="ne",
                 text=str(line_num),
                 fill="#888888",
-                font=("Consolas", 11),
+                font=(_MONO_FAMILY, 11),
             )
             idx = self._code_text.index(f"{idx}+1line")
             if self._code_text.compare(idx, ">=", tk.END):

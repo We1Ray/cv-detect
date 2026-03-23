@@ -1,25 +1,166 @@
 {
   "app": {
-    "title": "DL 異常偵測器",
-    "standby": "就緒"
+    "title": "CV 缺陷偵測器 v2.0",
+    "standby": "就緒",
+    "processing": "處理中...",
+    "completed": "完成"
   },
   "menu": {
     "file": {
+      "label": "檔案",
       "open": "開啟圖片",
-      "save": "儲存",
+      "open_folder": "開啟資料夾",
+      "save": "儲存結果",
+      "save_report": "匯出報告",
+      "recent": "最近開啟",
       "exit": "結束"
     },
+    "edit": {
+      "label": "編輯",
+      "undo": "復原",
+      "redo": "重做"
+    },
+    "view": {
+      "label": "檢視",
+      "zoom_in": "放大",
+      "zoom_out": "縮小",
+      "fit": "適合視窗",
+      "original": "原始大小",
+      "heatmap": "熱圖疊加",
+      "pixel_inspector": "像素檢查器",
+      "shortcuts": "快捷鍵"
+    },
     "tools": {
+      "label": "工具",
       "threshold": "閾值分割",
-      "shape_matching": "形狀匹配"
+      "morphology": "形態學運算",
+      "blob": "Blob 分析",
+      "shape_matching": "形狀匹配",
+      "metrology": "量測",
+      "edge": "邊緣偵測",
+      "color_inspect": "色彩檢測",
+      "frequency": "頻域分析",
+      "ocr": "文字辨識 (OCR)",
+      "barcode": "條碼掃描",
+      "calibration": "校正",
+      "engineering_tools": "工程工具"
+    },
+    "model": {
+      "label": "模型",
+      "train": "訓練模型",
+      "inspect": "開始檢測",
+      "load": "載入模型",
+      "export_onnx": "匯出 ONNX"
+    },
+    "help": {
+      "label": "說明",
+      "about": "關於",
+      "shortcuts": "快捷鍵一覽"
     }
+  },
+  "tabs": {
+    "train": "訓練",
+    "inspect": "檢測",
+    "settings": "設定"
+  },
+  "panel": {
+    "operations": "操作面板",
+    "properties": "屬性",
+    "results": "結果",
+    "quick_actions": "快速操作",
+    "history": "操作歷史"
+  },
+  "operations": {
+    "preprocessing": "前處理",
+    "detection": "偵測",
+    "postprocessing": "後處理",
+    "analysis": "分析"
+  },
+  "results": {
+    "no_results": "尚無檢測結果",
+    "time": "時間",
+    "operation": "操作",
+    "detail": "細節",
+    "score": "分數",
+    "judgment": "判定",
+    "defects": "瑕疵數",
+    "image": "影像",
+    "clear": "清除",
+    "export": "匯出",
+    "latest_result": "最新檢測結果",
+    "stats_summary": "統計摘要",
+    "total_inspected": "檢測總數:",
+    "pass_count": "通過:",
+    "fail_count": "不良:",
+    "yield_rate": "良率:",
+    "avg_score": "平均分數:",
+    "max_score": "最高分數:",
+    "inspection_log": "檢測紀錄",
+    "result": "結果",
+    "defect_count": "缺陷數",
+    "export_csv": "匯出 CSV",
+    "export_pdf": "匯出 PDF",
+    "clear_records": "清除紀錄",
+    "no_export_data": "沒有可匯出的結果",
+    "use_pdf_tool": "請使用 工具 > MVP 工具 中的 PDF 報表功能",
+    "confirm_clear": "確定要清除所有檢測紀錄嗎？",
+    "confirm": "確認",
+    "info": "資訊"
+  },
+  "history": {
+    "title": "操作歷史",
+    "time": "時間",
+    "operation": "操作",
+    "detail": "細節"
+  },
+  "dialog": {
+    "ok": "確定",
+    "cancel": "取消",
+    "apply": "套用",
+    "close": "關閉",
+    "yes": "是",
+    "no": "否",
+    "save": "儲存",
+    "reset": "重設"
+  },
+  "error": {
+    "title": "錯誤",
+    "unexpected": "發生未預期的錯誤",
+    "details": "詳細資訊",
+    "copy": "複製詳情",
+    "copied": "已複製到剪貼簿",
+    "no_image": "請先開啟圖片",
+    "file_not_found": "找不到檔案: {path}",
+    "invalid_param": "參數無效: {param}",
+    "hint_label": "建議:",
+    "show_technical": "顯示技術細節"
+  },
+  "validation": {
+    "image_required": "需要影像輸入",
+    "image_empty": "影像不能為空",
+    "image_type": "影像必須為 numpy ndarray",
+    "image_2d_3d": "影像必須為 2D 或 3D 陣列",
+    "param_positive": "參數 '{name}' 必須為正數",
+    "param_non_negative": "參數 '{name}' 必須為非負數",
+    "param_range": "參數 '{name}' 必須在 {min} 到 {max} 之間",
+    "none_error": "{name} 不可為 None",
+    "ndarray_error": "{name} 必須是 numpy.ndarray，收到 {actual}",
+    "ndim_error": "{name} 維度必須為 2 或 3，收到 ndim={ndim}",
+    "empty_error": "{name} 不可為空 (size=0)",
+    "integer_error": "{name} 必須是整數，收到 {value}",
+    "min_error": "{name} 必須 >= {min}，收到 {value}",
+    "odd_error": "{name} 必須是奇數，收到 {value}",
+    "numeric_error": "{name} 必須是數值，收到 {actual}",
+    "positive_error": "{name} 必須 > 0，收到 {value}",
+    "range_error": "{name} 必須在 [{min}, {max}] 範圍內，收到 {value}"
   },
   "inspection": {
     "pass": "通過",
     "fail": "瑕疵",
     "score": "分數",
     "defect_count": "瑕疵數",
-    "result": "檢測結果"
+    "result": "檢測結果",
+    "processing_time": "處理時間"
   },
   "judgment": {
     "pass": "PASS",
@@ -34,10 +175,12 @@
   },
   "dashboard": {
     "yield_rate": "良率",
+    "yield_trend": "良率趨勢",
     "total": "總數",
     "pass_count": "通過",
     "fail_count": "不良",
-    "mean_score": "平均分數"
+    "mean_score": "平均分數",
+    "spc_title": " SPC Dashboard "
   },
   "live": {
     "title": " 即時檢測面板 ",
@@ -62,5 +205,22 @@
     "log_started": "開始即時檢測",
     "log_stopped": "停止即時檢測",
     "error_start_failed": "啟動失敗: {error}"
+  },
+  "spc": {
+    "title": "SPC 統計製程管控",
+    "mean": "平均值",
+    "std": "標準差",
+    "ucl": "管制上限",
+    "lcl": "管制下限",
+    "cpk": "Cpk",
+    "alert": "警報"
+  },
+  "project": {
+    "title": "專案管理",
+    "new": "新增專案",
+    "open": "開啟專案",
+    "save": "儲存專案",
+    "name": "專案名稱",
+    "path": "專案路徑"
   }
 }

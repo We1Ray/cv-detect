@@ -235,6 +235,9 @@ def ocr_tesseract_simple(
 #  4. PaddleOCR-based OCR                                                 #
 # ====================================================================== #
 
+# Module-level cache for PaddleOCR instances, keyed by language.
+_paddle_ocr_cache: Dict[str, Any] = {}
+
 
 @log_operation(logger)
 def ocr_paddle(
@@ -271,7 +274,9 @@ def ocr_paddle(
     if len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-    ocr = PaddleOCR(use_angle_cls=True, lang=lang, show_log=False)
+    if lang not in _paddle_ocr_cache:
+        _paddle_ocr_cache[lang] = PaddleOCR(use_angle_cls=True, lang=lang, show_log=False)
+    ocr = _paddle_ocr_cache[lang]
     raw_results = ocr.ocr(image, cls=True)
 
     results: List[OCRResult] = []

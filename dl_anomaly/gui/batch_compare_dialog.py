@@ -18,6 +18,18 @@ from PIL import Image, ImageTk
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = _FONT_FAMILY
+    _MONO_FAMILY = "Consolas"
+
 
 @dataclass
 class _CompareResult:
@@ -179,7 +191,7 @@ class BatchCompareDialog(tk.Toplevel):
                    command=self._run_all).pack(side=tk.LEFT, padx=(0, 12))
         self._summary_var = tk.StringVar(value="")
         ttk.Label(action, textvariable=self._summary_var,
-                  font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
+                  font=(_FONT_FAMILY, 10, "bold")).pack(side=tk.LEFT)
 
         # ── Result Treeview ──
         tree_frame = ttk.Frame(self)
@@ -427,10 +439,10 @@ class BatchCompareDialog(tk.Toplevel):
             ox + 4, ly, ox + 18, ly + 14, fill="#FF3C3C", outline="")
         self._preview.create_text(
             ox + 22, ly + 7, text="超出 (B > A)", fill="white",
-            anchor=tk.W, font=("Segoe UI", 9))
+            anchor=tk.W, font=(_FONT_FAMILY, 9))
         ly += 18
         self._preview.create_rectangle(
             ox + 4, ly, ox + 18, ly + 14, fill="#3C64FF", outline="")
         self._preview.create_text(
             ox + 22, ly + 7, text="缺少 (A > B)", fill="white",
-            anchor=tk.W, font=("Segoe UI", 9))
+            anchor=tk.W, font=(_FONT_FAMILY, 9))

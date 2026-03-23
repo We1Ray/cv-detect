@@ -26,6 +26,18 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+import platform as _platform
+_SYS = _platform.system()
+if _SYS == "Darwin":
+    _FONT_FAMILY = "Helvetica Neue"
+    _MONO_FAMILY = "Menlo"
+elif _SYS == "Linux":
+    _FONT_FAMILY = "DejaVu Sans"
+    _MONO_FAMILY = "DejaVu Sans Mono"
+else:
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = _MONO_FAMILY
+
 # --------------------------------------------------------------------------- #
 # Theme constants
 # --------------------------------------------------------------------------- #
@@ -276,7 +288,7 @@ class AdvancedModelsDialog(tk.Toplevel):
 
         self._coreset_label = tk.Label(
             coreset_frame, text="0.010", bg=_BG, fg=_FG,
-            font=("Consolas", 9), width=6,
+            font=(_MONO_FAMILY, 9), width=6,
         )
         self._coreset_label.pack(side=tk.LEFT, padx=4)
         self._coreset_var.trace_add(
@@ -389,7 +401,7 @@ class AdvancedModelsDialog(tk.Toplevel):
             tk.Label(frame, text=label_text, bg=_BG, fg=_FG_DIM,
                      width=16, anchor=tk.W, font=("", 9)).pack(side=tk.LEFT)
             val_lbl = tk.Label(frame, text="--", bg=_BG, fg=_FG,
-                               anchor=tk.W, font=("Consolas", 9))
+                               anchor=tk.W, font=(_MONO_FAMILY, 9))
             val_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self._pc_info_labels[label_text] = val_lbl
 
@@ -435,7 +447,7 @@ class AdvancedModelsDialog(tk.Toplevel):
 
         self._pc_log_text = tk.Text(
             log_inner, height=6, state=tk.DISABLED, wrap=tk.WORD,
-            bg=_LOG_BG, fg=_LOG_FG, font=("Consolas", 9),
+            bg=_LOG_BG, fg=_LOG_FG, font=(_MONO_FAMILY, 9),
             insertbackground=_FG, selectbackground=_ACTIVE_BG,
         )
         log_scroll = tk.Scrollbar(log_inner, command=self._pc_log_text.yview)
@@ -545,7 +557,7 @@ class AdvancedModelsDialog(tk.Toplevel):
             tk.Label(frame, text=label_text, bg=_BG, fg=_FG_DIM,
                      width=14, anchor=tk.W, font=("", 9)).pack(side=tk.LEFT)
             val_lbl = tk.Label(frame, text="--", bg=_BG, fg=_FG,
-                               anchor=tk.W, font=("Consolas", 9))
+                               anchor=tk.W, font=(_MONO_FAMILY, 9))
             val_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self._onnx_info_labels[label_text] = val_lbl
 
@@ -666,13 +678,13 @@ class AdvancedModelsDialog(tk.Toplevel):
 
         self._cmp_score_a_label = tk.Label(
             score_frame, text="模型 A 分數: --", bg=_BG, fg=_FG,
-            font=("Consolas", 10), anchor=tk.W,
+            font=(_MONO_FAMILY, 10), anchor=tk.W,
         )
         self._cmp_score_a_label.pack(side=tk.LEFT, padx=(0, 20))
 
         self._cmp_score_b_label = tk.Label(
             score_frame, text="模型 B 分數: --", bg=_BG, fg=_FG,
-            font=("Consolas", 10), anchor=tk.W,
+            font=(_MONO_FAMILY, 10), anchor=tk.W,
         )
         self._cmp_score_b_label.pack(side=tk.LEFT)
 
