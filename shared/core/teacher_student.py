@@ -721,7 +721,7 @@ def load_model(path: Union[str, Path], device: str = "auto") -> TeacherStudentMo
         raise FileNotFoundError(f"Model file not found: {path}")
 
     resolved_device = _select_device(device)
-    payload = torch.load(str(path), map_location=resolved_device, weights_only=False)
+    payload = torch.load(str(path), map_location=resolved_device, weights_only=True)
 
     model = TeacherStudentModel(
         student_state_dict=payload["student_state_dict"],

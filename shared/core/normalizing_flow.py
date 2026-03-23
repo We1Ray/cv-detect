@@ -225,7 +225,7 @@ def load_model(path: Union[str, Path], device: str = "auto") -> NormFlowModel:
     if not path.exists():
         raise FileNotFoundError(f"Model file not found: {path}")
     dev = _select_device(device)
-    payload = torch.load(str(path), map_location=dev, weights_only=False)
+    payload = torch.load(str(path), map_location=dev, weights_only=True)
     model = NormFlowModel(
         flow_state_dicts=payload["flow_state_dicts"],
         backbone_name=payload["backbone_name"],

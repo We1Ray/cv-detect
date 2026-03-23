@@ -23,7 +23,7 @@ elif _SYS == "Linux":
     _MONO_FAMILY = "DejaVu Sans Mono"
 else:
     _FONT_FAMILY = "Segoe UI"
-    _MONO_FAMILY = _MONO_FAMILY
+    _MONO_FAMILY = "Consolas"
 
 _BG = "#2b2b2b"
 _BG_MEDIUM = "#3c3c3c"

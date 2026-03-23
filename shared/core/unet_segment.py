@@ -109,7 +109,7 @@ class UNetModel:
             raise FileNotFoundError(f"Model file not found: {path}")
 
         dev = _resolve_device(device)
-        payload = torch.load(str(path), map_location=dev, weights_only=False)
+        payload = torch.load(str(path), map_location=dev, weights_only=True)
         meta = payload["metadata"]
 
         logger.info("UNet model loaded from %s  (mode=%s)", path, meta["mode"])

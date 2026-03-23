@@ -337,7 +337,7 @@ def tune_from_autoencoder(
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=True)
     ae = AnomalyAutoencoder(**ckpt.get("model_config", {}))
     ae.load_state_dict(ckpt["model_state_dict"])
     ae.to(device).eval()

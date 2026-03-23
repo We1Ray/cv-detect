@@ -19,8 +19,8 @@ elif _SYS == "Linux":
     _FONT_FAMILY = "DejaVu Sans"
     _MONO_FAMILY = "DejaVu Sans Mono"
 else:
-    _FONT_FAMILY = _FONT_FAMILY
-    _MONO_FAMILY = _MONO_FAMILY
+    _FONT_FAMILY = "Segoe UI"
+    _MONO_FAMILY = "Consolas"
 
 # Maps exception type names to (code, user_message, recovery_hint).
 ERROR_MAP: Dict[str, Tuple[str, str, str]] = {

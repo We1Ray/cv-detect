@@ -40,7 +40,7 @@ elif _SYS == "Linux":
     _MONO_FAMILY = "DejaVu Sans Mono"
 else:
     _FONT_FAMILY = "Segoe UI"
-    _MONO_FAMILY = _MONO_FAMILY
+    _MONO_FAMILY = "Consolas"
 
 
 # ====================================================================== #
